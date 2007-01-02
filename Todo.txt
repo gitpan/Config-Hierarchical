@@ -1,0 +1,18 @@
+#test utilities
+#wantarray
+#locked categories
+#custom get
+#custom Get Hash ref
+#document  code
+#=head1 TEST, COVERAGE and EXAMPLES
+#test pod, syntax, critic ...
+#coverage
+#check the extra test modules in Xmas proj
+#check all coverage tests and make them real tests
+#Manifest, README, ...
+
+test distribution release manifest ??.
+
+check in SVK
+
+log4j support
