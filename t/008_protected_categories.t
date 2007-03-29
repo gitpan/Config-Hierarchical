@@ -13,7 +13,23 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'protected categories names' => 2} ;
+local $Plan = {'protected categories names' => 1} ;
+
+my $config = new Config::Hierarchical
+			(
+			CATEGORY_NAMES => ['<CLI>'],
+			INITIAL_VALUES =>
+				[
+				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				],
+			) ;
+			
+$config->Set(CATEGORY => 'CLI', NAME => 'CC', VALUE => 2) ;
+is($config->Get(CATEGORY => 'CLI', NAME => 'CC'), 2, 'Get, protection brackets removed') ;
+}
+
+{
+local $Plan = {'set protected categorvariable' => 2} ;
 
 my $config = new Config::Hierarchical
 			(
@@ -25,7 +41,7 @@ my $config = new Config::Hierarchical
 			) ;
 			
 had_no_warnings('protection brackets removed') ;
-is($config->Get(CATEGORY => 'CLI', NAME => 'CC'), 1, 'Get, protection brackets removed') ;
+is($config->Get(CATEGORY => 'CLI', NAME => 'CC'), 1, 'set protected categorvariable') ;
 }
 
 {
@@ -84,6 +100,11 @@ warnings_like
 				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
 				[CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1],
 				] ,
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
 			) ;
 			
 	#~ # check values
@@ -91,10 +112,9 @@ warnings_like
 	}
 	[
 	#~ # check which warnings are generated
-	qr/Setting 'PBS::CC'. Overriding config 'CC' in category 'CLI'/,
-	qr/Setting 'CURRENT::CC'. Precedence will be given to 'PBS::CC' \(protected category\)/,
-	qr/Setting 'LOCAL::CC'. Overriding config 'CC' in category 'CURRENT'/,
-	qr/Setting 'LOCAL::CC'. Precedence will be given to 'PBS::CC' \(protected category\)/,
+	qr/Setting 'PBS::CC'.*Overriding 'CLI::CC'/,
+	qr/Setting 'CURRENT::CC'.*'<PBS>::CC' takes precedence/,
+	qr/Setting 'LOCAL::CC'.*Overriding 'CURRENT::CC'.*'<PBS>::CC' takes precedence/,
 	], "override and precedence warnings" ;
 	
 }
@@ -115,20 +135,25 @@ warnings_like
 				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
 				[CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1],
 				] ,
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
 			) ;
 			
 	#~ # check values
-	is($config->Get(NAME => 'CC'), 2, 'one protected, all override') ;
+	is($config->Get(NAME => 'CC'), 2, 'all override') ;
+	
 	}
 	[
 	#~ # check which warnings are generated
-	qr/Setting 'PBS::CC'. Overriding config 'CC' in category 'CLI'/,
-	qr/Setting 'CURRENT::CC'. Precedence will be given to 'PBS::CC' \(protected category\)/,
-	qr/'LOCAL::CC'. Precedence will be given to 'PBS::CC' \(protected category\)/,
+	qr/Setting 'PBS::CC'.*Overriding 'CLI::CC'/,
+	qr/Setting 'CURRENT::CC'.*'<PBS>::CC' takes precedence/,
+	qr/Setting 'LOCAL::CC'.*'<PBS>::CC' takes precedence/,
 	], "override and precedence warnings" ;
 	
 }
-
 
 #~ use Data::TreeDumper ;
 #~ diag DumpTree $config ;

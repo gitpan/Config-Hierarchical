@@ -14,6 +14,296 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
+local $Plan = {'override warning and value' => 2} ;
+
+warnings_like
+	{
+	my $config = new Config::Hierarchical
+			(
+			CATEGORY_NAMES   => ['A', 'B',],
+			DEFAULT_CATEGORY => 'B',
+			INITIAL_VALUES   =>
+				[
+				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A',              ],
+				[CATEGORY => 'B', NAME => 'CC', VALUE => 'B', OVERRIDE => 1],
+				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+				] ,
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
+			) ;
+			
+	#~ # check values
+	is($config->Get(NAME => 'CC'), 'B', 'override is sticky') ;
+	}
+	[
+	#~ # check which warnings are generated
+	qr/Setting 'B::CC'.*Overriding 'A::CC'/,
+	qr/Variable 'A::CC' was overridden/,
+	], "override warnings" ;
+}
+
+{
+local $Plan = {'override twice without warning' => 2} ;
+
+warnings_like
+	{
+	my $config3 = new Config::Hierarchical
+					(
+					NAME => 'config3',
+					CATEGORY_NAMES         => ['PARENT', 'CURRENT'],
+					DEFAULT_CATEGORY       => 'CURRENT',
+					INITIAL_VALUES  =>
+						[
+						[FILE => __FILE__, LINE => 0,  NAME => 'CC', CATEGORY => 'PARENT', VALUE => 0],
+						] ,
+					INTERACTION            =>
+						{
+						# work around error in Test::Warn
+						WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+						},
+					) ;
+					
+	$config3->Set(FILE => __FILE__, LINE => 0, NAME => 'CC', OVERRIDE => 1, VALUE => '4') ;
+	$config3->Set(FILE => __FILE__, LINE => 0, NAME => 'CC', OVERRIDE => 1, VALUE => '5') ;
+
+	is($config3->Get(NAME => 'CC'), 5, 'override twice without warning') ;
+	}
+	[
+	qr/Overriding 'PARENT::CC'/,
+	qr/Overriding 'PARENT::CC'/,
+	], 'precedence warnings' ;
+}
+
+{
+local $Plan = {'no warning when same value as protected category' => 1} ;
+
+my $config = new Config::Hierarchical
+				(
+				NAME => 'Test config',
+
+				CATEGORY_NAMES         => ['<PROTECTED>','CURRENT'],
+				DEFAULT_CATEGORY       => 'CURRENT',
+						
+				INITIAL_VALUES  =>
+					[
+					[NAME => 'PROT', CATEGORY => 'PROTECTED', VALUE => 'protected'],
+					] ,
+					
+				INTERACTION            =>
+					{
+					# work around error in Test::Warn
+					WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+					}
+				) ;
+				
+$config->Set(NAME => 'PROT', VALUE => 'protected', OVERRIDE => 1) ;
+
+had_no_warnings() ;
+}
+
+{
+local $Plan = {'CHECK_LOWER_LEVEL_CATEGORIES' => 7} ;
+
+warning_like
+	{
+	my $config = new Config::Hierarchical
+					(
+					NAME => 'Test config',
+
+					CATEGORY_NAMES         => ['<CLI>', '<PBS>', 'PARENT', 'LOCAL', 'CURRENT'],
+					DEFAULT_CATEGORY       => 'CURRENT',
+							
+					INITIAL_VALUES  =>
+						[
+						[NAME => 'PROT', CATEGORY => 'PBS', VALUE => 'pbs'],
+						[NAME => 'PROT', CATEGORY => 'PARENT', VALUE => 'parent'],
+						] ,
+						
+					CHECK_LOWER_LEVEL_CATEGORIES => 1,
+					
+					INTERACTION            =>
+						{
+						# work around error in Test::Warn
+						WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+						}
+					) ;
+					
+	warning_like
+		{
+		$config->Set(NAME => 'PROT', VALUE => 'current') ;
+		} qr/'PARENT::PROT' takes precedence.*'<PBS>::PROT' takes precedence/, '' ;
+		
+	warning_like
+		{
+		$config->Set(NAME => 'PROT', CATEGORY => 'PBS', VALUE => 'PBS') ;
+		} qr/Takes Precedence over lower category 'PARENT::PROT'.*Takes Precedence over lower category 'CURRENT::PROT'/, '' ;
+		
+	warning_like
+		{
+		$config->Set(NAME => 'PROT', CATEGORY => 'CLI', VALUE => 'cli') ;
+		} qr/Takes Precedence over lower category '<PBS>::PROT'.*Takes Precedence over lower category 'PARENT::PROT'.*Takes Precedence over lower category 'CURRENT::PROT'/, '' ;
+		
+	warning_like
+		{
+		$config->Set(NAME => 'PROT', CATEGORY => 'PARENT', VALUE => 'parent') ;
+		} qr/'<PBS>::PROT' takes precedence.*Takes Precedence over lower category 'CURRENT::PROT'/, '' ;
+		
+	warning_like
+		{
+		$config->Set(NAME => 'PROT', LOCK => 1, OVERRIDE => 1, VALUE => 'override') ;
+		} qr/Overriding 'PARENT::PROT'.*'<PBS>::PROT' takes precedence/, '' ;
+		
+	is($config->Get(NAME => 'PROT'),'cli', 'right value') ;
+	} 
+	[
+	qr/'<PBS>::PROT' takes precedence/, # in setup
+	], 'warnings OK'
+
+}
+
+{
+local $Plan = {'CHECK_LOWER_LEVEL_CATEGORIES' => 4} ;
+
+my $config = new Config::Hierarchical
+				(
+				NAME => 'Test config',
+
+				CATEGORY_NAMES         => ['A', 'B'],
+				DEFAULT_CATEGORY       => 'B',
+						
+				INITIAL_VALUES  =>
+					[
+					[NAME => 'CC', CATEGORY => 'B', VALUE => 'B'],
+					] ,
+				
+				INTERACTION            =>
+					{
+					# work around error in Test::Warn
+					WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+					}
+				) ;
+				
+warning_like
+	{
+	$config->Set(NAME => 'CC', CATEGORY => 'A', VALUE => 'A', CHECK_LOWER_LEVEL_CATEGORIES => 1,) ;
+	} qr/Takes Precedence over lower category 'B::CC'/, '' ;
+	
+is($config->Get(NAME => 'CC'), 'A', 'right value') ;
+
+$config->Set(NAME => 'CC', CATEGORY => 'A', VALUE => 'B', CHECK_LOWER_LEVEL_CATEGORIES => 1,) ;
+is($config->Get(NAME => 'CC'), 'B', 'right value') ;
+
+$config->Set(NAME => 'XYZ', CATEGORY => 'A', VALUE => 'XYZ', CHECK_LOWER_LEVEL_CATEGORIES => 1,) ;
+had_no_warnings("no warning for variable that don't exist in lower categories") ; 
+}
+
+{
+local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 2} ;
+
+warning_like
+	{
+	my $config = new Config::Hierarchical
+					(
+					CATEGORY_NAMES    => ['A', 'B'],
+					DEFAULT_CATEGORY => 'B',
+					INITIAL_VALUES  =>
+						[
+						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						] ,
+						
+					WARN_FOR_EXPLICIT_CATEGORY => 1
+					) ;
+					
+	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'],) ;
+	is($value, 'B', 'Get from specific category') ;
+	} 
+	[
+	qr/Setting 'CC' using explicit category/, # in setup
+	qr/Setting 'CC' using explicit category/, # in setup
+	qr/Setting 'B::CC'/, # precedence warning
+	qr/Getting 'CC' using explicit category/,
+	], 'warnings OK'
+}
+
+{
+local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 2} ;
+
+warning_like
+	{
+	my $config = new Config::Hierarchical
+					(
+					CATEGORY_NAMES    => ['A', 'B'],
+					DEFAULT_CATEGORY => 'B',
+					INITIAL_VALUES  =>
+						[
+						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						] ,
+						
+					) ;
+					
+	$config->SetDisplayExplicitCategoryWarningOption(1) ;
+	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'],) ;
+	is($value, 'B', 'Get from specific category') ;
+	} 
+	[
+	qr/Setting 'B::CC'/, # precedence warning
+	qr/Getting 'CC' using explicit category/,
+	], 'warnings OK'
+}
+
+{
+local $Plan = {'SetDisplayExplicitCategoryWarningOption verbose' => 1} ;
+
+warning_like
+	{
+	my $config = new Config::Hierarchical
+				(
+				VERBOSE => 1,
+				INTERACTION =>
+					{
+					INFO => sub{print @_},
+					} ,
+				) ;
+	
+	$config->SetDisplayExplicitCategoryWarningOption(1) ;
+	
+	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'], ) ;
+	} 
+	[
+	qr/Getting 'CC' using explicit category/,
+	qr/Variable 'CC' doesn't exist in categories/,
+	], 'warnings OK'
+}
+
+{
+local $Plan = {'GET_CATEGORY' => 3} ;
+
+warning_like
+	{
+	my $config = new Config::Hierarchical
+					(
+					CATEGORY_NAMES    => ['A', 'B'],
+					DEFAULT_CATEGORY => 'B',
+					INITIAL_VALUES  =>
+						[
+						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						] ,
+					) ;
+					
+	my ($value, $from) = $config->Get(NAME => 'CC', GET_CATEGORY => 1,) ;
+	is($value, 'A', 'GET_CATEGORY right value') ;
+	is($from, 'A', 'GET_CATEGORY right category') ;
+	} qr/Setting 'B::CC'/, 'precedence warning'
+	
+}
+
+{
 local $Plan = {'SILENT_NOT_EXISTS' => 1} ;
 
 dies_ok
@@ -121,12 +411,17 @@ dies_ok
 }
 
 {
-local $Plan = {'initial values' => 8} ;
+local $Plan = {'initial values' => 7} ;
 
 my $config = new Config::Hierarchical
 				(
 				CATEGORY_NAMES   => ['CLI', 'CURRENT'],
 				DEFAULT_CATEGORY => 'CURRENT',
+				INTERACTION            =>
+					{
+					# work around error in Test::Warn
+					WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+					},
 				) ;
 				
 $config->Set(CATEGORY => 'CLI', NAME => 'CC', VALUE => 1) ;
@@ -137,39 +432,44 @@ warning_like
 	is($config->Get(NAME => 'AS'), undef, 'Not set ok') ;
 	} qr/Returning undef/i, "element doesn't exist";
 	
-
-is($config->Get(CATEGORY => 'XYZ', NAME => 'CC'), 1, 'Category ignored in Get') ;
-
 warning_like
 	{
 	$config->Set(CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2) ;
-	} qr/Precedence will be given/i, "precedence will be given";
+	} qr/'CLI::CC' takes precedence/, "precedence given";
 
 is($config->Get(NAME => 'CC'), 1, 'High priority category')  or diag DumpTree $config ;
 
 warning_like
 	{
 	$config->Set(CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1) ;
-	} qr/Overriding config/i, "override";
+	} qr/Overriding 'CLI::CC'/i, "override";
 
 is($config->Get(NAME => 'CC'), 2, 'override') ;
 }
 
 {
-local $Plan = {'override is not time dependent' => 1} ;
+local $Plan = {'override is not time dependent' => 2} ;
 
-my $config = new Config::Hierarchical
-			(
-			CATEGORY_NAMES   => ['CLI', 'CURRENT'],
-			DEFAULT_CATEGORY => 'CURRENT',
-			INITIAL_VALUES   =>
-				[
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1],
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
-				] ,
-			) ;
-
-is($config->Get(NAME => 'CC'), 2, 'override is not time dependent')  or diag DumpTree $config ;
+warning_like
+	{
+	my $config = new Config::Hierarchical
+				(
+				CATEGORY_NAMES   => ['CLI', 'CURRENT'],
+				DEFAULT_CATEGORY => 'CURRENT',
+				INITIAL_VALUES   =>
+					[
+					[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1],
+					[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
+					] ,
+				INTERACTION            =>
+					{
+					# work around error in Test::Warn
+					WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+					}
+				) ;
+				
+	is($config->Get(NAME => 'CC'), 2, 'override is not time dependent')  or diag DumpTree $config ;
+	} qr/Variable 'CLI::CC' was overridden/, 'override warning' ;
 }
 
 {
@@ -235,26 +535,30 @@ my $config = new Config::Hierarchical
 				[CATEGORY => 'CLI', NAME => 'CLI2', VALUE => 1],
 				[CATEGORY => 'CLI', NAME => 'CLI3', VALUE => 1],
 				] ,
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
 			) ;
 
-$config->Set(CATEGORY => 'CURRENT', NAME => 'CLI', VALUE => 'override', SILENT_OVERRIDE => 1) ;
+$config->Set(CATEGORY => 'CURRENT', NAME => 'CLI', VALUE => 'override', OVERRIDE => 1, SILENT_OVERRIDE => 1) ;
 had_no_warnings("overriding variable, warning localy disabled") ; 
 
 warning_like
 	{
 	$config->Set(CATEGORY => 'CURRENT', NAME => 'CLI2', VALUE => 'override') ;
-	} qr/Precedence will be given to 'CLI::CLI2'/, "overriding variable" ;
+	} qr/'CLI::CLI2' takes precedence/, "overriding variable" ;
 	
 $config->SetDisableSilentOptions(1) ;
-$config->Set(CATEGORY => 'CURRENT', NAME => 'CLI3', VALUE => 'override') ;
-had_no_warnings("overriding variable, warning globaly disabled") ; 
+$config->Set(CATEGORY => 'CURRENT', NAME => 'CLI3', VALUE => 'override', OVERRIDE => 1, SILENT_OVERRIDE => 1) ;
+had_no_warnings("overriding variable, silent override globaly disabled") ; 
 }
 
 {
 local $Plan = {'GetHash' => 2} ;
 
 my $config ;
-
 warning_like
 	{
 	$config = new Config::Hierarchical
@@ -270,11 +574,17 @@ warning_like
 				[CATEGORY => 'CURRENT', NAME => 'CLI',     VALUE => 'CURRENT_CLI'],
 				[CATEGORY => 'CURRENT', NAME => 'CLI2',    VALUE => 'CURRENT_CLI2', OVERRIDE => 1],
 				] ,
+				
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
 			) ;
 	} 
 	[
-	qr/Setting 'CURRENT::CLI'. Precedence will be given to 'CLI::CLI'/,
-	qr/Setting 'CURRENT::CLI2'. Overriding config 'CLI2' in category 'CLI'/,
+	qr/Setting 'CURRENT::CLI'.*'CLI::CLI' takes precedence/,
+	qr/Setting 'CURRENT::CLI2'.*Overriding 'CLI::CLI2'/,
 	], "initialisation" ;
 
 is_deeply(scalar($config->GetHashRef()),{CLI => 'CLI_CLI', CLI2 => 'CURRENT_CLI2', CURRENT => 'CURRENT'}, 'expected values') ;

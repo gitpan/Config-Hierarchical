@@ -24,4 +24,5 @@ t/008_protected_categories.t
 t/010_lock.t
 t/011_interaction.t
 t/012_utilities.t
+t/013_history.t
 t/perlcriticrc

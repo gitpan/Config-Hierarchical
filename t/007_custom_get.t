@@ -32,13 +32,19 @@ warnings_like
 				[CATEGORY => 'LOCAL'  , NAME => 'AR', VALUE => 'LOCAL_AR'],
 				[CATEGORY => 'CURRENT', NAME => 'AR', VALUE => 'CURRENT_AR', OVERRIDE => 1],
 				] ,
+				
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
 			) ;
 			
 	}
 	[
 	#~ # check which warnings are generated
-	qr/Setting 'PARENT::CC'. Precedence will be given to 'PBS::CC' \(protected category\)/,
-	qr/Setting 'CURRENT::AR'. Precedence will be given to 'LOCAL::AR' \(protected category\)/,
+	qr/Setting 'PARENT::CC'.*'<PBS>::CC' takes precedence/,
+	qr/Setting 'CURRENT::AR'.*'<LOCAL>::AR' takes precedence/,
 	], "override and precedence warnings" ;
 
 #diag DumpTree $config ;

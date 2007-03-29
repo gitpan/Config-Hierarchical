@@ -1,0 +1,13 @@
+0.02
+	FIXED: removed dependency to Data::TreeDumper in Build.pl
+	CHANGED: precedence given to X::Y'  should be 'X::Y takes precedence'
+	CHANGED: override variable is always override even if the OVERRIDE parameter is not passed
+	CHANGED: variable history categories displayed in priority order order
+	ADDED: CHECK_LOWER_LEVEL_CATEGORIES
+	ADDED: WARN_FOR_EXPLICIT_CATEGORY
+	ADDED: GET_CATEGORY
+	FIXED: status and warning messages made uniform
+	ADDED: check number of element in all subs to avoid 'odd number of ...' message
+	ADDED:; COMMENT
+	FIXED: status was not added to history when locking is done through 'set'. 
+	ADDED: VALIDATOR and AddValidator

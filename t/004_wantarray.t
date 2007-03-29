@@ -13,7 +13,7 @@ use Test::Warn ;
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'wantarray' => 13} ;
+local $Plan = {'wantarray' => 12} ;
 
 my $config = new Config::Hierarchical
 			(
@@ -32,12 +32,6 @@ warning_like
 	$config->Get(NAME => 'CC') ;
 	} qr/void context/i, "Get in void context";
 	
-warning_like
-	{
-	my @array = $config->Get(NAME => 'CC') ;
-	} qr/array context/i, "Get in array context";
-	
-
 my @cc_ld = $config->GetMultiple('CC', 'LD') ;
 had_no_warnings("GetMultilpe in array context") ; 
 

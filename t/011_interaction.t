@@ -13,7 +13,7 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'INTERACTION' => 6} ;
+local $Plan = {'INTERACTION' => 7} ;
 
 my (@info_messages, @warn_messages, @die_messages, @debug_messages);
 
@@ -45,6 +45,9 @@ is(@debug_messages, 2, "Set debug hook") ;
 
 my $cc = $config->Get(NAME => 'CC') ;
 is(@debug_messages, 3, "Get debug hook") ;
+
+my $cc2 = $config->Get(NAME => 'CC', CATEGORY => 'CURRENT') ;
+is(@debug_messages, 4, "Get debug hook") ;
 
 $config->Set(NAME => 'A', VALUE => 'forced A', FORCE_LOCK => 1) ;
 is(@warn_messages, 1, "forcing lock messages") ;

@@ -8,21 +8,34 @@ use Test::Spelling;
 add_stopwords
 	(
 	qw(
+		AddValidator
+		AddValidators
+		AddVariableValidator
 		AnnoCPAN
 		CPAN
 		Category
 		CheckHigherPriorityCategories
+		CheckLowerPriorityCategories
 		CheckAndSetVariable
 		CreateCustomGetFunctions
 		CheckOptionNames
 		GetDump
 		GetHashRef
 		GetHistory
-		GetInherited
+		GetInheritable
 		GetMultiple
 		IsLocked
+		OverrideVariable
 		SetDisableSilentOptions
 		SetMultiple
+		SetDisplayExplicitCategoryWarningOption
+		
+		VALIDATORS
+		PositiveValueValidator
+		SecondValidator
+		Validators
+		validator
+		validators
 		
 		Nadim
 		nadim

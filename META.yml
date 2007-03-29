@@ -1,6 +1,6 @@
 ---
 name: Config-Hierarchical
-version: 0.01
+version: 0.02
 author:
   - 'Khemir Nadim ibn Hamouda. <nadim@khemir.net>'
 abstract: configuration variable hierachical container
@@ -26,7 +26,7 @@ requires:
 provides:
   Config::Hierarchical:
     file: lib/Config/Hierarchical.pm
-    version: 0.01
+    version: 0.02
 generated_by: Module::Build version 0.2805
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

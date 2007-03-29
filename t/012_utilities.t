@@ -13,121 +13,6 @@ use Test::Warn ;
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'empty history' => 13} ;
-
-my $config = new Config::Hierarchical() ;
-
-my $history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "unexisting variable history") ;
-
-$history = $config->GetHistory(CATEGORY => 'CURRENT', NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "unexisting variable history") ;
-
-# do stuff that don't change history
-$config->Set(NAME => 'XYZ', VALUE => 1) ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "Set") ;
-
-$config->SetMultiple([NAME => 'XYZ', VALUE => 1], [NAME => 'ABC', VALUE => 1]) ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "SetMultiple") ;
-
-# do stuff that don't change history
-my $xyz = $config->Get(NAME => 'XYZ') ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "Get") ;
-
-my @multiple = $config->GetMultiple('XYZ', 'ABC') ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "GetMultiple") ;
-
-my $hash_ref = $config->GetHashRef() ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "GetHashRed") ;
-
-$config->SetDisableSilentOptions(1) ;
-$config->SetDisableSilentOptions(0) ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "SetDisableSilentOptions") ;
-
-$config->IsLocked(NAME => 'CC') ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "IsLocked") ;
-
-$config->GetDump() ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "GetDump") ;
-
-$config->GetHistory(NAME => 'XYZ') ;
-$history = $config->GetHistory(NAME => 'CC') ;
-like($history, qr/Variable '.*::CC' doesn't exist!$/, "GetHistory") ;
-
-throws_ok
-	{
-	$config->GetHistory(FILE => 'my file', LINE => 'my line') ;
-	} qr/my file:my line/, "location options used in die" ;
-
-dies_ok
-	{
-	$config->GetHistory(CATEGORY => 'NOT_EXIT', NAME => 'CC') ;
-	} "bad category" ;
-}
-
-{
-local $Plan = {'history' => 19} ;
-
-my $creation_line = __LINE__ + 1 ;
-my $config = new Config::Hierarchical
-				(
-				INITIAL_VALUES  =>
-					[
-					[NAME => 'CC', VALUE => 1],
-					[NAME => 'CC', VALUE => 2],
-					[NAME => 'AS', VALUE => 4],
-					] ,
-				) ;
-
-is($config->Get(NAME => 'CC'), 2, 'right value') ;
-
-my $history = $config->GetHistory(NAME => 'CC') ;
-
-is(scalar(@{$history}), 2, '2 entries')  ;
-
-my $lock_line = __LINE__ + 1 ;
-$config->Lock(NAME => 'CC') ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 3, '3 entries')  ;
-
-my $unlock_line = __LINE__ + 1 ;
-$config->Unlock(NAME => 'CC') ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, '4 entries') ;
-
-$config->IsLocked(NAME => 'CC') ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, '4 entries') ;
-
-$config->GetDump() ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, '4 entries') ;
-
-$config->GetHistory(NAME => 'CC') ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, '4 entries') ;
-
-like($history->[0]{STATUS}, qr/Set: Success, did not exist/, 'history entry 1')  ;
-is($history->[0]{FILE}, __FILE__, 'from this file') ;
-is($history->[0]{LINE}, $creation_line, 'line') ;
-
-like($history->[1]{STATUS}, qr/Set: Success/, 'history entry 2')  ;
-is($history->[1]{FILE}, __FILE__, 'from this file') ;
-is($history->[1]{LINE}, $creation_line, 'line') ;
-
-like($history->[2]{STATUS}, qr/Lock: success/, 'history entry 3')  ;
-is($history->[2]{FILE}, __FILE__, 'from this file') ;
-is($history->[2]{LINE}, $lock_line, 'line') ;
-
-like($history->[3]{STATUS}, qr/Unlock: success/, 'history entry 4')  ;
-is($history->[3]{FILE}, __FILE__, 'from this file') ;
-is($history->[3]{LINE}, $unlock_line, 'line') ;
-}
-
-{
 local $Plan = {'Dump' => 1} ;
 
 my $config = new Config::Hierarchical
@@ -146,10 +31,30 @@ isnt($dump, '', 'dump not empty') ;
 
 
 {
-local $Plan = {'verbose' => 44} ;
+local $Plan = {'Dump shows category in priority order not alphanumeric' => 1} ;
 
-#TODO add checking of the message and that the location is reported properly
+my $config = new Config::Hierarchical
+				(
+				CATEGORY_NAMES    => ['Z', 'A'],
+				DEFAULT_CATEGORY => 'A',
+				INITIAL_VALUES  =>
+					[
+					[CATEGORY => 'Z', NAME => 'Z', VALUE => 1],
+					[CATEGORY => 'A', NAME => 'A', VALUE => 2],
+					] ,
+				) ;
 
+my $dump = $config->GetDump(DISPLAY_ADDRESS => 0, GLYPHS => ['', '', '', '']) ;
+like($dump, qr/CATEGORIES \nZ \nZ/, 'dump category in priority order') ;
+}
+
+
+{
+#~ use Data::TreeDumper ;
+
+local $Plan = {'verbose' => 48} ;
+
+my $file_regex = __FILE__ ; $file_regex = qr/$file_regex/ ;
 my @messages ;
 my $info = sub {push @messages, @_} ;
 	
@@ -162,80 +67,107 @@ my $config = new Config::Hierarchical
 				) ;
 
 is(@messages, 2, "Create and Set messages") ;
-
-my $file_regex = __FILE__ ; $file_regex = qr/$file_regex/ ;
-
 like($messages[0], $file_regex, 'verbose reports right file') ;
-like($messages[0], qr/Create/, 'creation message') ;
+like($messages[0], qr/Created Config::Hierarchical/, 'creation message') ;
+like($messages[1], $file_regex, 'verbose reports right file') ;
+like($messages[1], qr/Setting 'CURRENT::CC' to '1'/, 'Set message') ;
+#~ diag DumpTree(\@messages) ;
+
+
+@messages = () ;
+my $cc = $config->Get(NAME => 'CC') ;
+is(@messages, 2, "Get message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Getting 'CC'/, 'Get message') ;
+like($messages[1], qr/found in category 'CURRENT'/, 'Get message') ;
+#~ diag DumpTree(\@messages) ;
+
+@messages = () ;
+$config->GetDump() ;
+is(@messages, 0, "Dump generates no message") ;
+#~ diag DumpTree(\@messages) ;
+
+@messages = () ;
+my $hash_ref = $config->GetHashRef() ;
+is(@messages, 2, "GetHashRef generates a message per variable") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Getting 'CC'/, 'Get message') ;
+like($messages[1], qr/found in category 'CURRENT'/, 'Get message') ;
+#~ diag DumpTree(\@messages) ;
+
+@messages = () ;
+$config->GetHistory(NAME => 'CC') ;
+is(@messages, 0, "GetHistory generates no message") ;
+#~ diag DumpTree(\@messages) ;
+
+@messages = () ;
+$config->Set(NAME => 'LD', VALUE => 2) ;
+is(@messages, 1, "set message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Set/, 'Set message') ;
+#~ diag DumpTree(\@messages) ;
+
+@messages = () ;
+$config->SetMultiple([NAME => 'M1', VALUE => 1], [NAME => 'M2', VALUE => 1]) ;
+is(@messages, 2, "SetMultiple messages") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Set/, 'Set message') ;
 like($messages[1], $file_regex, 'verbose reports right file') ;
 like($messages[1], qr/Set/, 'Set message') ;
+#~ diag DumpTree(\@messages) ;
 
-my $cc = $config->Get(NAME => 'CC') ;
-is(@messages, 3, "Get message") ;
-like($messages[2], $file_regex, 'verbose reports right file') ;
-like($messages[2], qr/Get/, 'Get message') ;
-
-$config->GetDump() ;
-is(@messages, 3, "Dump generates no message") ;
-
-my $hash_ref = $config->GetHashRef() ;
-is(@messages, 4, "GetHashRef generates a message per variable") ;
-like($messages[3], $file_regex, 'verbose reports right file') ;
-like($messages[3], qr/Get/, 'Get message') ;
-
-$config->GetHistory(NAME => 'CC') ;
-is(@messages, 4, "GetHistory generates no message") ;
-
-$config->Set(NAME => 'LD', VALUE => 2) ;
-is(@messages, 5, "set message") ;
-like($messages[4], $file_regex, 'verbose reports right file') ;
-like($messages[4], qr/Set/, 'Set message') ;
-
-$config->SetMultiple([NAME => 'M1', VALUE => 1], [NAME => 'M2', VALUE => 1]) ;
-is(@messages, 7, "SetMultiple messages") ;
-like($messages[5], $file_regex, 'verbose reports right file') ;
-like($messages[5], qr/Set/, 'Set message') ;
-like($messages[6], $file_regex, 'verbose reports right file') ;
-like($messages[6], qr/Set/, 'Set message') ;
-
+@messages = () ;
 my @multiple = $config->GetMultiple('M1', 'M2') ;
-is(@messages, 9, "GetMultiple messages") ;
-like($messages[7], $file_regex, 'verbose reports right file') ;
-like($messages[7], qr/Get/, 'Get message') ;
-like($messages[8], $file_regex, 'verbose reports right file') ;
-like($messages[8], qr/Get/, 'Get message') ;
+is(@messages, 4, "GetMultiple messages") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Getting 'M1'/, 'Get message') ;
+like($messages[1], qr/found in category 'CURRENT'/, 'Get message') ;
+like($messages[2], $file_regex, 'verbose reports right file') ;
+like($messages[2], qr/Getting 'M2'/, 'Get message') ;
+like($messages[3], qr/found in category 'CURRENT'/, 'Get message') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->IsLocked(NAME => 'CC') ;
-is(@messages, 10, "IsLocked message") ;
-like($messages[9], $file_regex, 'verbose reports right file') ;
-like($messages[9], qr/Check/, 'checking message') ;
+is(@messages, 1, "IsLocked message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Check/, 'checking message') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->Lock(NAME => 'CC') ;
-is(@messages, 11, "Lock message") ;
-like($messages[10], $file_regex, 'verbose reports right file') ;
-like($messages[10], qr/locking/i, 'locking message') ;
+is(@messages, 1, "Lock message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/locking/i, 'locking message') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->Unlock(NAME => 'CC') ;
-is(@messages, 12, "Unlock message") ;
-like($messages[11], $file_regex, 'verbose reports right file') ;
-like($messages[11], qr/unlocking/i, 'unlocking message') ;
+is(@messages, 1, "Unlock message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/unlocking/i, 'unlocking message') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->SetDisableSilentOptions(1) ;
-is(@messages, 13, "SetDisableSilentOptions message") ;
-like($messages[12], $file_regex, 'verbose reports right file') ;
-like($messages[12], qr/DISABLE_SILENT_OPTIONS/, 'DISABLE_SILENT_OPTIONS') ;
+is(@messages, 1, "SetDisableSilentOptions message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/DISABLE_SILENT_OPTIONS/, 'DISABLE_SILENT_OPTIONS') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->SetDisableSilentOptions(0) ;
-is(@messages, 14, "SetDisableSilentOptions message") ;
-like($messages[13], $file_regex, 'verbose reports right file') ;
-like($messages[13], qr/DISABLE_SILENT_OPTIONS/, 'DISABLE_SILENT_OPTIONS') ;
+is(@messages, 1, "SetDisableSilentOptions message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/DISABLE_SILENT_OPTIONS/, 'DISABLE_SILENT_OPTIONS') ;
+#~ diag DumpTree(\@messages) ;
 
+@messages = () ;
 $config->Exists(VERBOSE => 1, NAME => 'CC') ;
-is(@messages, 15, "Exists message") ;
-like($messages[14], $file_regex, 'verbose reports right file') ;
-like($messages[14], qr/Checking Existance/, 'Checking Existance') ;
-
-#~ diag @messages ;
+is(@messages, 1, "Exists message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Checking Existance/, 'Checking Existance') ;
+#~ diag DumpTree(\@messages) ;
 }
 
 

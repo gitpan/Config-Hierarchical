@@ -49,7 +49,7 @@ my $code = <<'EOC'
 use strict ;
 use warnings ;
 
-use Data::TreeDumper ;
+#~ use Data::TreeDumper ;
 #~ print DumpTree \@_, 'args:' ;
 
 sub GetVersionandRevisionFrom

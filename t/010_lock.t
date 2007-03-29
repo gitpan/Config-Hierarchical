@@ -13,7 +13,7 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'locking' => 12} ;
+local $Plan = {'locking' => 13} ;
 
 my $config = new Config::Hierarchical() ;
 $config->Set(NAME => 'CC', VALUE => 'gcc', LOCK => 1) ;
@@ -25,6 +25,12 @@ is($config->IsLocked(NAME => 'CC'), 0, 'config unlocked') ;
 
 $config->Lock(NAME => 'CC') ;
 ok($config->IsLocked(NAME => 'CC'), 'config locked') ;
+
+throws_ok
+	{
+	$config->Set(NAME => 'WHATEVER', VALUE => 1, LOCK => 1) ;
+	$config->Set(NAME => 'WHATEVER', VALUE => 2, LOCK => 0) ;
+	} qr/was locked and couldn't be set/, "can't unlock without FORCE_LOCK" ;
 
 warning_like
 	{

@@ -12,15 +12,6 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'initial values' => 1} ;
-
-dies_ok
-	{
-	my $config = new Config::Hierarchical(CATEGORIES => ['CLI']) ;
-	} "invalid argument to constructor" ;
-}
-
-{
 local $Plan = {'initial values' => 14} ;
 
 my $config = new Config::Hierarchical
@@ -39,7 +30,7 @@ is(defined $config, 1, 'constructor with initial values') ;
 is($config->IsLocked(NAME => 'CC'), 0, 'config not locked') ;
 is($config->IsLocked(NAME => 'LD'), 1, 'config locked') ;
 
-is($config->Get(NAME => 'CC'), '2', 'initialized ok') ;
+is($config->Get(NAME => 'CC'), '2', 'initialized ok') or diag  $config->GetDump();
 is($config->Get(NAME => 'LD'), '3', 'initialized ok') ;
 is($config->Get(CATEGORY => 'CURRENT', NAME => 'AS'), 4, 'initialized ok') ;
 
@@ -175,29 +166,6 @@ is($config->Get(NAME => 'CC'), 'gcc', 'get variable back') ;
 $config->Set(NAME => 'CC', VALUE => 'gcc2') ;
 is($config->Get(NAME => 'CC'), 'gcc2', 'get overriden variable back') ;
 
-}
-
-{
-local $Plan = {'multiple configs' => 4} ;
-
-my $config = new Config::Hierarchical() ;
-
-$config->Set(NAME => 'CC', VALUE => 1, OVERRIDE => 1) ;
-$config->Set(NAME => 'CC', VALUE => 2, OVERRIDE => 1) ;
-
-is($config->Get(NAME => 'CC'), '2', 'override ok') ;
-
-dies_ok
-	{
-	$config->Set(NAME => 'CC', VALUE => 3) ;
-	} "missing OVERRIDE" ;
-
-dies_ok
-	{
-	$config->Set(NAME => 'CC', VALUE => 3, OVERRIDE => 0) ;
-	} "unset OVERRIDE" ;
-
-is($config->Get(NAME => 'CC'), '2', 'override ok') ;
 }
 
 {
