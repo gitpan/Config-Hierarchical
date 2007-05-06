@@ -84,7 +84,7 @@ my $config = new Config::Hierarchical
 				(
 				NAME            => 'extra coverage test',
 				VERBOSE         => 1,
-				INITIAL_VALUES  => [[NAME => 'CC', VALUE => 'gcc']],
+				INITIAL_VALUES  => [{NAME => 'CC', VALUE => 'gcc'}],
 				INTERACTION     => 
 					{
 					INFO  => $info,

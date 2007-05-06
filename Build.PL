@@ -9,6 +9,8 @@ my @split_modules ;
 
 my @pm_files = qw(
 lib/Config/Hierarchical.pm
+lib/Config/Hierarchical/Tie/ReadOnly.pm
+lib/Config/Hierarchical/Delta.pm
 );
 
 for(@pm_files)

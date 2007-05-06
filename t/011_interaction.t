@@ -26,7 +26,7 @@ my $config = new Config::Hierarchical
 				(
 				NAME            => 'verbose test',
 				VERBOSE         => 1,
-				INITIAL_VALUES  => [[NAME => 'CC', VALUE => 1]],
+				INITIAL_VALUES  => [{NAME => 'CC', VALUE => 1}],
 				INTERACTION     => 
 					{
 					INFO  => $info,
@@ -52,7 +52,14 @@ is(@debug_messages, 4, "Get debug hook") ;
 $config->Set(NAME => 'A', VALUE => 'forced A', FORCE_LOCK => 1) ;
 is(@warn_messages, 1, "forcing lock messages") ;
 
-$config->GetHashRef('argument') ;
-is(@die_messages, 1, "dying") ;
+#~ $config->GetHashRef('argument') ;
+#~ is(@die_messages, 1, "dying") ;
+
+use Data::TreeDumper ;
+
+(@info_messages, @warn_messages, @die_messages, @debug_messages) = () ;
+my @tuples = $config->GetKeyValueTuples() ;
+is(@debug_messages, 3, "GetKeyValueTuples") or diag DumpTree \@debug_messages;
+
 }
 

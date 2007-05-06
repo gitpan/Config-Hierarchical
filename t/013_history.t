@@ -20,7 +20,7 @@ my $config = new Config::Hierarchical
 		(
 		INITIAL_VALUES   =>
 			[
-			[NAME => 'CC', VALUE => 'A', ],
+			{NAME => 'CC', VALUE => 'A', },
 			] ,
 		INTERACTION            =>
 			{
@@ -50,8 +50,8 @@ my $config = new Config::Hierarchical
 		(
 		INITIAL_VALUES   =>
 			[
-			[NAME => 'CC', VALUE => 1],
-			[NAME => 'CC', VALUE => 2],
+			{NAME => 'CC', VALUE => 1},
+			{NAME => 'CC', VALUE => 2},
 			] ,
 		INTERACTION            =>
 			{
@@ -80,22 +80,12 @@ my $history = $config->GetHistory(CATEGORIES_TO_EXTRACT_FROM => ['CURRENT'], NAM
 my $reference_history =
 	[
 		{
-		ACTION => 'CREATE AND SET', 
-		CATEGORY => 'CURRENT', 
-		FILE => __FILE__,
-		LINE => $creation_line,
-		STATUS => 'OK.',
-		TIME_STAMP => 0,
-		VALUE => 1,
+		EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		TIME => 0,
 		},
 		{
-		ACTION => 'SET',
-		CATEGORY => 'CURRENT',
-		FILE => __FILE__,
-		LINE => $creation_line,
-		STATUS => 'OK.',
-		TIME_STAMP => 1,
-		VALUE => 2,
+		EVENT => "value = '2'. SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		TIME => 1,
 		},
 	] ;
 
@@ -113,7 +103,7 @@ warnings_like
 					NAME => 'config1',
 					INITIAL_VALUES  =>
 						[
-						[FILE => __FILE__, LINE => 0, NAME => 'CC', VALUE => 1],
+						{FILE => __FILE__, LINE => 0, NAME => 'CC', VALUE => 1},
 						] ,
 						
 					INTERACTION            =>
@@ -137,7 +127,7 @@ warnings_like
 					DEFAULT_CATEGORY       => 'CURRENT',
 					INITIAL_VALUES  =>
 						[
-						[FILE => __FILE__, LINE => 0, HISTORY => $history1, NAME => 'CC', CATEGORY => 'PARENT', VALUE => $value1],
+						{FILE => __FILE__, LINE => 0, HISTORY => $history1, NAME => 'CC', CATEGORY => 'PARENT', VALUE => $value1},
 						] ,
 					INTERACTION            =>
 						{
@@ -160,7 +150,7 @@ warnings_like
 					DEFAULT_CATEGORY       => 'CURRENT',
 					INITIAL_VALUES  =>
 						[
-						[FILE => __FILE__, LINE => 0, HISTORY => $history2, NAME => 'CC', CATEGORY => 'PARENT', VALUE => $value2],
+						{FILE => __FILE__, LINE => 0, HISTORY => $history2, NAME => 'CC', CATEGORY => 'PARENT', VALUE => $value2},
 						] ,
 					INTERACTION            =>
 						{
@@ -170,7 +160,7 @@ warnings_like
 					) ;
 					
 	$config3->Set(FILE => __FILE__, LINE => 0, NAME => 'CC', OVERRIDE => 1, VALUE => '4') ;
-	$config3->Set(FILE => __FILE__, LINE => 0, NAME => 'CC', VALUE => '5') ;
+	$config3->Set(FILE => __FILE__, LINE => 0, NAME => 'CC', VALUE => '5', COMMENT => 'Set it to 5') ;
 
 	my($value3, $category3) = $config3->Get(NAME => 'CC',  GET_CATEGORY => 1) ;
 	my $title3 = "'CC' = '$value3' from category '$category3':" ;
@@ -179,81 +169,44 @@ warnings_like
 
 my $reference_history = 
 	[ 
+	{ 
+	EVENT => "value = '3'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 't/013_history.t:0', status = OK." ,
+	HISTORY =>
+		[
 		{
+		EVENT => "value = '2'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 't/013_history.t:0', status = OK." ,
 		HISTORY =>
-			[ 
-				{
-				HISTORY =>
-					[ 
-						{
-						ACTION => 'CREATE AND SET' ,
-						CATEGORY => 'CURRENT' ,
-						FILE => 't/013_history.t' ,
-						LINE => 0 ,
-						STATUS => 'OK.' ,
-						TIME_STAMP => 0 ,
-						VALUE => 1,
-						},
-						{
-						ACTION => 'SET' ,
-						CATEGORY => 'CURRENT' ,
-						FILE => 't/013_history.t' ,
-						LINE => 0 ,
-						STATUS => 'OK.' ,
-						TIME_STAMP => 1 ,
-						VALUE => 2 ,
-						},
-					],
-				ACTION => 'CREATE, SET HISTORY AND SET' ,
-				CATEGORY => 'PARENT' ,
-				FILE => 't/013_history.t' ,
-				LINE => 0 ,
-				STATUS => 'OK.' ,
-				TIME_STAMP => 0 ,
-				VALUE => 2 ,
-				},
-				
-				{
-				ACTION => 'CREATE AND SET' ,
-				CATEGORY => 'CURRENT' ,
-				FILE => 't/013_history.t' ,
-				LINE => 0 ,
-				OVERRIDE => 1 ,
-				STATUS => "Overriding 'PARENT::CC' (existed, value was different).OK." ,
-				TIME_STAMP => 1 ,
-				VALUE => 3 ,
-				},
+			[
+			{
+			EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at 't/013_history.t:0', status = OK.",
+			TIME => 0,
+			},
+			{
+			EVENT => "value = '2'. SET, category = 'CURRENT' at 't/013_history.t:0', status = OK.",
+			TIME => 1,
+			},
 			],
-		ACTION => 'CREATE, SET HISTORY AND SET' ,
-		CATEGORY => 'PARENT' ,
-		FILE => 't/013_history.t' ,
-		LINE => 0 ,
-		STATUS => 'OK.' ,
-		TIME_STAMP => 0 ,
-		VALUE => 3 ,
+		TIME => 0,
 		},
-		
-		{ 
-		ACTION => 'CREATE AND SET' ,
-		CATEGORY => 'CURRENT' ,
-		FILE => 't/013_history.t' ,
-		LINE => 0 ,
-		OVERRIDE => 1 ,
-		STATUS => "Overriding 'PARENT::CC' (existed, value was different).OK." ,
-		TIME_STAMP => 1 ,
-		VALUE => 4 ,
+		{
+		EVENT => "value = '3'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
+		TIME => 1
 		},
-		
-		{ 
-		ACTION => 'SET' ,
-		CATEGORY => 'CURRENT' ,
-		FILE => 't/013_history.t' ,
-		LINE => 0 ,
-		OVERRIDE => '1 (due to previous override)' ,
-		STATUS => "Overriding 'PARENT::CC' (existed, value was different).OK." ,
-		TIME_STAMP => 2 ,
-		VALUE => 5 ,
-		},
+		],
+	TIME => 0,
+	},
+	
+	{
+	EVENT => "value = '4'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK." ,
+	TIME => 1,
+	},
+	
+	{
+	COMMENT => 'Set it to 5',
+	EVENT => "value = '5'. SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
+	TIME => 2,
+	},
+	
 	] ;
 
 	is_deeply($history3, $reference_history, 'history matches reference') or diag DumpTree($history3);
@@ -268,7 +221,7 @@ my $reference_history =
 }
 
 {
-local $Plan = {'override warning and value' => 7} ;
+local $Plan = {'override warning and value' => 5} ;
 
 warnings_like
 	{
@@ -278,9 +231,14 @@ warnings_like
 			DEFAULT_CATEGORY => 'B',
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A',              ],
-				[CATEGORY => 'B', NAME => 'CC', VALUE => 'B', OVERRIDE => 1],
-				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+				{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+				{CATEGORY => 'B', NAME => 'CC', VALUE => 'B', OVERRIDE => 1},
+				{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+				
+				{CATEGORY => 'A', NAME => 'OVERRIDE', VALUE => 'OVERRIDE', OVERRIDE => 1},
+				{CATEGORY => 'A', NAME => 'LOCK', VALUE => 'LOCK', LOCK => 1},
+				{CATEGORY => 'A', NAME => 'OVERRIDE_AND_LOCK', VALUE => 'OVERRIDE_AND_LOCK', OVERRIDE => 1, LOCK => 1},
+				{CATEGORY => 'A', NAME => 'FORCE_LOCK', VALUE => 'FORCE_LOCK', FORCE_LOCK => 1},
 				] ,
 			INTERACTION            =>
 				{
@@ -288,18 +246,40 @@ warnings_like
 				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
 				},
 			) ;
-			
-	my $history = $config->GetHistory(NAME => 'CC') ;
+	my $creation_line = __LINE__ - 1 ;
 	
-	#~ use Data::TreeDumper ;
-	#~ diag DumpTree($history)  ;
-	
-	is($history->[0]{CATEGORY}, 'A', 'right category');
-	is($history->[0]{TIME_STAMP}, 0, 'right order') ;
-	is($history->[1]{CATEGORY}, 'B', 'right category') ;
-	is($history->[1]{TIME_STAMP}, 1, 'right order') ;
-	is($history->[2]{CATEGORY}, 'A', 'right category') ;
-	is($history->[2]{TIME_STAMP}, 2, 'right order') ;
+	my $history = $config->GetHistory(NAME => 'OVERRIDE') ;
+	is
+		(
+		$history->[0]{EVENT},
+		"value = 'OVERRIDE'. CREATE AND SET, OVERRIDE, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		'event is complete'
+		);
+		
+		
+	$history = $config->GetHistory(NAME => 'LOCK') ;
+	is
+		(
+		$history->[0]{EVENT},
+		"value = 'LOCK'. CREATE AND SET, LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		'event is complete'
+		);
+		
+	$history = $config->GetHistory(NAME => 'OVERRIDE_AND_LOCK') ;
+	is
+		(
+		$history->[0]{EVENT},
+		"value = 'OVERRIDE_AND_LOCK'. CREATE AND SET, OVERRIDE, LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		'event is complete'
+		);
+		
+	$history = $config->GetHistory(NAME => 'FORCE_LOCK') ;
+	is
+		(
+		$history->[0]{EVENT},
+		"value = 'FORCE_LOCK'. CREATE AND SET, FORCE_LOCK, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		'event is complete'
+		);
 	}
 	[
 	#~ # check which warnings are generated
@@ -309,54 +289,54 @@ warnings_like
 }
 
 {
-local $Plan = {'empty history' => 13} ;
+local $Plan = {'empty history' => 14} ;
 
 my $config = new Config::Hierarchical() ;
 
 my $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "unexisting variable history") ;
+is(@$history, 0, "unexisting variable history") ;
 
-$history = $config->GetHistory(CATEGORY => 'CURRENT', NAME => 'CC') ;
-is($history, undef, "unexisting variable history") ;
+$history = $config->GetHistory(CATEGORIES_TO_EXTRACT_FROM => ['CURRENT'], NAME => 'CC') ;
+is(@$history, 0, "unexisting variable history") ;
 
 # do stuff that don't change history
 $config->Set(NAME => 'XYZ', VALUE => 1) ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "Set") ;
+is(@$history, 0, "Set") ;
 
 $config->SetMultiple([NAME => 'XYZ', VALUE => 1], [NAME => 'ABC', VALUE => 1]) ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "SetMultiple") ;
+is(@$history, 0, "SetMultiple") ;
 
 # do stuff that don't change history
 my $xyz = $config->Get(NAME => 'XYZ') ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "Get") ;
+is(@$history, 0, "Get") ;
 
 my @multiple = $config->GetMultiple('XYZ', 'ABC') ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "GetMultiple") ;
+is(@$history, 0, "GetMultiple") ;
 
 my $hash_ref = $config->GetHashRef() ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "GetHashRed") ;
+is(@$history, 0, "GetHashRed") ;
 
 $config->SetDisableSilentOptions(1) ;
 $config->SetDisableSilentOptions(0) ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "SetDisableSilentOptions") ;
+is(@$history, 0, "SetDisableSilentOptions") ;
 
 $config->IsLocked(NAME => 'CC') ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "IsLocked") ;
+is(@$history, 0, "IsLocked") ;
 
 $config->GetDump() ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "GetDump") ;
+is(@$history, 0, "GetDump") ;
 
 $config->GetHistory(NAME => 'XYZ') ;
 $history = $config->GetHistory(NAME => 'CC') ;
-is($history, undef, "GetHistory") ;
+is(@$history, 0, "GetHistory") ;
 
 throws_ok
 	{
@@ -365,8 +345,13 @@ throws_ok
 
 dies_ok
 	{
-	$config->GetHistory(CATEGORY => 'NOT_EXIT', NAME => 'CC') ;
+	$config->GetHistory(CATEGORIES_TO_EXTRACT_FROM => ['NOT_EXIT'], NAME => 'CC') ;
 	} "bad category" ;
+
+dies_ok
+	{
+	$config->GetHistory(CATEGORY => 'NOT_EXIT', NAME => 'CC') ;
+	} "bad argument" ;
 }
 
 {
@@ -377,9 +362,9 @@ my $config = new Config::Hierarchical
 				(
 				INITIAL_VALUES  =>
 					[
-					[NAME => 'CC', VALUE => 1],
-					[NAME => 'CC', VALUE => 2],
-					[NAME => 'AS', VALUE => 4],
+					{NAME => 'CC', VALUE => 1},
+					{NAME => 'CC', VALUE => 2},
+					{NAME => 'AS', VALUE => 4},
 					] ,
 				) ;
 
@@ -401,10 +386,10 @@ $config->IsLocked(NAME => 'CC') ;
 is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, 'IsLocked does not change history') ;
 
 $config->GetDump() ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, 'IsLocked does not change history') ;
+is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, 'GetDump does not change history') ;
 
 $config->GetHistory(NAME => 'CC') ;
-is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, 'IsLocked does not change history') ;
+is(scalar(@{$config->GetHistory(NAME => 'CC')}), 4, 'GetHistory does not change history') ;
 
 $history = $config->GetHistory(NAME => 'CC') ;
 
@@ -413,37 +398,21 @@ $history = $config->GetHistory(NAME => 'CC') ;
 
 my $reference_history =
 	[
-		{
-		ACTION => 'CREATE AND SET', 
-		CATEGORY => 'CURRENT', 
-		FILE => __FILE__,
-		LINE => $creation_line,
-		STATUS => 'OK.',
-		TIME_STAMP => 0,
-		VALUE => 1,
+ 		{
+		EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		TIME => 0,
 		},
 		{
-		ACTION => 'SET',
-		CATEGORY => 'CURRENT',
-		FILE => __FILE__,
-		LINE => $creation_line,
-		STATUS => 'OK.',
-		TIME_STAMP => 1,
-		VALUE => 2,
+		EVENT => "value = '2'. SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		TIME => 1,
 		},
 		{
-		CATEGORY => 'CURRENT',
-		FILE => __FILE__,
-		LINE => $lock_line,
-		STATUS => 'Lock: OK',
-		TIME_STAMP => 3,
+		EVENT => "LOCK, category = 'CURRENT' at '" . __FILE__ . ':' . $lock_line . "', status = Lock: OK.",
+		TIME => 3,
 		},
 		{
-		CATEGORY => 'CURRENT',
-		FILE => __FILE__,
-		LINE => $unlock_line,
-		STATUS => 'Unlock: OK',
-		TIME_STAMP => 4,
+		EVENT => "UNLOCK, category = 'CURRENT' at '" . __FILE__ . ':' . $unlock_line . "', status = Unlock: OK.",
+		TIME => 4,
 		},
 	] ;
 

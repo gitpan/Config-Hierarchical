@@ -18,10 +18,10 @@ my $config = new Config::Hierarchical
 				(
 				INITIAL_VALUES         =>
 					[
-					[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 1],
-					[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2],
-					[CATEGORY => 'CURRENT', NAME => 'LD', VALUE => 3, LOCK => 1],
-					[NAME => 'AS', VALUE => 4, LOCK => 1],
+					{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 1},
+					{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2},
+					{CATEGORY => 'CURRENT', NAME => 'LD', VALUE => 3, LOCK => 1},
+					{NAME => 'AS', VALUE => 4, LOCK => 1},
 					] ,
 				) ;
 				
@@ -72,7 +72,7 @@ my $config = new Config::Hierarchical
 				(
 				NAME            => 'extra coverage test',
 				VERBOSE         => 1,
-				INITIAL_VALUES  => [[NAME => 'AS', VALUE => 1]],
+				INITIAL_VALUES  => [{NAME => 'AS', VALUE => 1}],
 				INTERACTION     => 
 					{
 					INFO  => $info,
@@ -96,7 +96,7 @@ dies_ok
 				(
 				INITIAL_VALUES         =>
 					[
-					[CATEGORY => 'CURRENT', NAME => 'CC'],
+					{CATEGORY => 'CURRENT', NAME => 'CC'},
 					] ,
 				) ;
 	} "missing  parameter" ;
@@ -107,7 +107,7 @@ dies_ok
 				(
 				INITIAL_VALUES         =>
 					[
-					[CATEGORY => 'CURRENT', NAMEX => 'CC', VALUE => 1],
+					{CATEGORY => 'CURRENT', NAMEX => 'CC', VALUE => 1},
 					] ,
 				) ;
 	} "bad parameter" ;
@@ -118,7 +118,7 @@ dies_ok
 				(
 				INITIAL_VALUES         =>
 					[
-					[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
+					{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
 					] ,
 				) ;
 	} "bad category" ;
@@ -362,8 +362,8 @@ my $config = new Config::Hierarchical
 		DEFAULT_CATEGORY => 'CURRENT',
 		INITIAL_VALUES   =>
 			[
-			[CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2],
-			[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2],
+			{CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2},
+			{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2},
 			] ,
 		) ;
 	

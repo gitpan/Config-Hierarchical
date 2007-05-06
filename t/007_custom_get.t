@@ -27,10 +27,10 @@ warnings_like
 				},
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 'PBS_CC'],
-				[CATEGORY => 'PARENT' , NAME => 'CC', VALUE => 'PARENT_CC'],
-				[CATEGORY => 'LOCAL'  , NAME => 'AR', VALUE => 'LOCAL_AR'],
-				[CATEGORY => 'CURRENT', NAME => 'AR', VALUE => 'CURRENT_AR', OVERRIDE => 1],
+				{CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 'PBS_CC'},
+				{CATEGORY => 'PARENT' , NAME => 'CC', VALUE => 'PARENT_CC'},
+				{CATEGORY => 'LOCAL'  , NAME => 'AR', VALUE => 'LOCAL_AR'},
+				{CATEGORY => 'CURRENT', NAME => 'AR', VALUE => 'CURRENT_AR', OVERRIDE => 1},
 				] ,
 				
 			INTERACTION            =>

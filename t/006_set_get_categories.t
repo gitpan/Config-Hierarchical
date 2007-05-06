@@ -24,9 +24,9 @@ warnings_like
 			DEFAULT_CATEGORY => 'B',
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A',              ],
-				[CATEGORY => 'B', NAME => 'CC', VALUE => 'B', OVERRIDE => 1],
-				[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
+				{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+				{CATEGORY => 'B', NAME => 'CC', VALUE => 'B', OVERRIDE => 1},
+				{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
 				] ,
 			INTERACTION            =>
 				{
@@ -42,7 +42,32 @@ warnings_like
 	#~ # check which warnings are generated
 	qr/Setting 'B::CC'.*Overriding 'A::CC'/,
 	qr/Variable 'A::CC' was overridden/,
-	], "override warnings" ;
+	], "override warnings. existed, value was different" ;
+}
+
+{
+local $Plan = {'override same value' => 1} ;
+
+warnings_like
+	{
+	my $config = new Config::Hierarchical
+			(
+			CATEGORY_NAMES   => ['A', 'B',],
+			DEFAULT_CATEGORY => 'B',
+			INITIAL_VALUES   =>
+				[
+				{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+				{CATEGORY => 'B', NAME => 'CC', VALUE => 'A', OVERRIDE => 1},
+				] ,
+			INTERACTION            =>
+				{
+				# work around error in Test::Warn
+				WARN  => sub{my $message = join(' ', @_) ; $message =~ s[\n][]g ;  use Carp ;carp $message; },
+				},
+			) ;
+	}
+	[
+	], "no override warnings. existed, value was equal" ;
 }
 
 {
@@ -57,7 +82,7 @@ warnings_like
 					DEFAULT_CATEGORY       => 'CURRENT',
 					INITIAL_VALUES  =>
 						[
-						[FILE => __FILE__, LINE => 0,  NAME => 'CC', CATEGORY => 'PARENT', VALUE => 0],
+						{FILE => __FILE__, LINE => 0,  NAME => 'CC', CATEGORY => 'PARENT', VALUE => 0},
 						] ,
 					INTERACTION            =>
 						{
@@ -89,7 +114,7 @@ my $config = new Config::Hierarchical
 						
 				INITIAL_VALUES  =>
 					[
-					[NAME => 'PROT', CATEGORY => 'PROTECTED', VALUE => 'protected'],
+					{NAME => 'PROT', CATEGORY => 'PROTECTED', VALUE => 'protected'},
 					] ,
 					
 				INTERACTION            =>
@@ -118,8 +143,8 @@ warning_like
 							
 					INITIAL_VALUES  =>
 						[
-						[NAME => 'PROT', CATEGORY => 'PBS', VALUE => 'pbs'],
-						[NAME => 'PROT', CATEGORY => 'PARENT', VALUE => 'parent'],
+						{NAME => 'PROT', CATEGORY => 'PBS', VALUE => 'pbs'},
+						{NAME => 'PROT', CATEGORY => 'PARENT', VALUE => 'parent'},
 						] ,
 						
 					CHECK_LOWER_LEVEL_CATEGORIES => 1,
@@ -176,7 +201,7 @@ my $config = new Config::Hierarchical
 						
 				INITIAL_VALUES  =>
 					[
-					[NAME => 'CC', CATEGORY => 'B', VALUE => 'B'],
+					{NAME => 'CC', CATEGORY => 'B', VALUE => 'B'},
 					] ,
 				
 				INTERACTION            =>
@@ -201,7 +226,7 @@ had_no_warnings("no warning for variable that don't exist in lower categories") 
 }
 
 {
-local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 2} ;
+local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 5} ;
 
 warning_like
 	{
@@ -211,21 +236,31 @@ warning_like
 					DEFAULT_CATEGORY => 'B',
 					INITIAL_VALUES  =>
 						[
-						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
-						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+						{CATEGORY => 'B', NAME => 'CC', VALUE => 'B'},
 						] ,
 						
 					WARN_FOR_EXPLICIT_CATEGORY => 1
 					) ;
 					
-	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'],) ;
-	is($value, 'B', 'Get from specific category') ;
+	warning_like
+		{
+		my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'],) ;
+		is($value, 'B', 'Get from specific category') ;
+		}
+		qr/Getting 'CC' using explicit category/, 'explict category' ;
+	
+	warning_like
+		{
+		my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B', 'A'],) ;
+		is($value, 'B', 'Get from specific categories') ;
+		}
+		qr/Getting 'CC' using explicit categories/, 'explict categories' ;
 	} 
 	[
 	qr/Setting 'CC' using explicit category/, # in setup
 	qr/Setting 'CC' using explicit category/, # in setup
 	qr/Setting 'B::CC'/, # precedence warning
-	qr/Getting 'CC' using explicit category/,
 	], 'warnings OK'
 }
 
@@ -240,8 +275,8 @@ warning_like
 					DEFAULT_CATEGORY => 'B',
 					INITIAL_VALUES  =>
 						[
-						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
-						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+						{CATEGORY => 'B', NAME => 'CC', VALUE => 'B'},
 						] ,
 						
 					) ;
@@ -291,8 +326,8 @@ warning_like
 					DEFAULT_CATEGORY => 'B',
 					INITIAL_VALUES  =>
 						[
-						[CATEGORY => 'A', NAME => 'CC', VALUE => 'A'],
-						[CATEGORY => 'B', NAME => 'CC', VALUE => 'B'],
+						{CATEGORY => 'A', NAME => 'CC', VALUE => 'A'},
+						{CATEGORY => 'B', NAME => 'CC', VALUE => 'B'},
 						] ,
 					) ;
 					
@@ -337,10 +372,10 @@ my $config = new Config::Hierarchical
 				DEFAULT_CATEGORY => 'CURRENT',
 				INITIAL_VALUES  =>
 					[
-					[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
-					[CATEGORY => 'CLI', NAME => 'CC', VALUE => 2],
-					[CATEGORY => 'CURRENT', NAME => 'LD', VALUE => 3, LOCK => 1],
-					[NAME => 'AS', VALUE => 4, LOCK => 1],
+					{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
+					{CATEGORY => 'CLI', NAME => 'CC', VALUE => 2},
+					{CATEGORY => 'CURRENT', NAME => 'LD', VALUE => 3, LOCK => 1},
+					{NAME => 'AS', VALUE => 4, LOCK => 1},
 					] ,
 				) ;
 				
@@ -376,7 +411,7 @@ dies_ok
 				
 				INITIAL_VALUES  =>
 					[
-					[CATEGORY => 'CLI', NAME => 'CC'],
+					{CATEGORY => 'CLI', NAME => 'CC'},
 					] ,
 				) ;
 	} "missing  parameter" ;
@@ -390,7 +425,7 @@ dies_ok
 				
 				INITIAL_VALUES   =>
 					[
-					[CATEGORY => 'CLI', NAMEX => 'CC', VALUE => 1],
+					{CATEGORY => 'CLI', NAMEX => 'CC', VALUE => 1},
 					] ,
 				) ;
 	} "bad parameter" ;
@@ -404,7 +439,7 @@ dies_ok
 				
 				INITIAL_VALUES   =>
 					[
-					[CATEGORY => 'BAD_CATEGORY', NAME => 'CC', VALUE => 1],
+					{CATEGORY => 'BAD_CATEGORY', NAME => 'CC', VALUE => 1},
 					] ,
 				) ;
 	} "bad category" ;
@@ -458,8 +493,8 @@ warning_like
 				DEFAULT_CATEGORY => 'CURRENT',
 				INITIAL_VALUES   =>
 					[
-					[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1],
-					[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
+					{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1},
+					{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
 					] ,
 				INTERACTION            =>
 					{
@@ -483,8 +518,8 @@ my $config = new Config::Hierarchical
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2, OVERRIDE => 1},
 				] ,
 			) ;
 
@@ -501,8 +536,8 @@ my $config = new Config::Hierarchical
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES  =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 1],
+				{CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 1},
 				] ,
 			) ;
 
@@ -531,9 +566,9 @@ my $config = new Config::Hierarchical
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES  =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1],
-				[CATEGORY => 'CLI', NAME => 'CLI2', VALUE => 1],
-				[CATEGORY => 'CLI', NAME => 'CLI3', VALUE => 1],
+				{CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1},
+				{CATEGORY => 'CLI', NAME => 'CLI2', VALUE => 1},
+				{CATEGORY => 'CLI', NAME => 'CLI3', VALUE => 1},
 				] ,
 			INTERACTION            =>
 				{
@@ -556,7 +591,7 @@ had_no_warnings("overriding variable, silent override globaly disabled") ;
 }
 
 {
-local $Plan = {'GetHash' => 2} ;
+local $Plan = {'GetHash && $config->GetKeyValueTuples' => 4} ;
 
 my $config ;
 warning_like
@@ -568,11 +603,11 @@ warning_like
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES  =>
 				[
-				[CATEGORY => 'CLI',     NAME => 'CLI',     VALUE => 'CLI_CLI'],
-				[CATEGORY => 'CLI',     NAME => 'CLI2',    VALUE => 'CLI_CLI2'],
-				[CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 'CURRENT'],
-				[CATEGORY => 'CURRENT', NAME => 'CLI',     VALUE => 'CURRENT_CLI'],
-				[CATEGORY => 'CURRENT', NAME => 'CLI2',    VALUE => 'CURRENT_CLI2', OVERRIDE => 1],
+				{CATEGORY => 'CLI',     NAME => 'CLI',     VALUE => 'CLI_CLI'},
+				{CATEGORY => 'CLI',     NAME => 'CLI2',    VALUE => 'CLI_CLI2'},
+				{CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 'CURRENT'},
+				{CATEGORY => 'CURRENT', NAME => 'CLI',     VALUE => 'CURRENT_CLI'},
+				{CATEGORY => 'CURRENT', NAME => 'CLI2',    VALUE => 'CURRENT_CLI2', OVERRIDE => 1},
 				] ,
 				
 			INTERACTION            =>
@@ -588,4 +623,22 @@ warning_like
 	], "initialisation" ;
 
 is_deeply(scalar($config->GetHashRef()),{CLI => 'CLI_CLI', CLI2 => 'CURRENT_CLI2', CURRENT => 'CURRENT'}, 'expected values') ;
+
+is_deeply
+	(
+	[sort {$a->{NAME} cmp $b->{NAME}} $config->GetKeyValueTuples()],
+	[
+	{NAME => 'CLI', VALUE => 'CLI_CLI'},
+	{NAME => 'CLI2', VALUE => 'CURRENT_CLI2'},
+	{NAME => 'CURRENT', VALUE => 'CURRENT'}
+	]
+	, 'expected tuples'
+	)  or diag DumpTree [$config->GetKeyValueTuples()];
+
+warning_like
+	{
+	$config->GetKeyValueTuples() ;
+	}
+	qr/\'GetKeyValueTuples\' in void context/, 'GetKeyValue tuples called in void context' ;
+
 }

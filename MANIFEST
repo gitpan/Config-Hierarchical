@@ -8,6 +8,8 @@ README
 Todo.txt
 
 lib/Config/Hierarchical.pm
+lib/Config/Hierarchical/Tie/ReadOnly.pm
+lib/Config/Hierarchical/Delta.pm
 
 t/000_distribution.t
 t/000_kwalitee.t
@@ -25,4 +27,11 @@ t/010_lock.t
 t/011_interaction.t
 t/012_utilities.t
 t/013_history.t
+t/014_validator.t
+t/015_lock_categories.t
+t/016_keys.t
+t/017_aliased_categories.t
+t/051_tie_readonly.t
+t/061_delta.t
+
 t/perlcriticrc

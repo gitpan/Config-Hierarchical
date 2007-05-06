@@ -19,8 +19,8 @@ my $config = new Config::Hierarchical
 			(
 			INITIAL_VALUES  =>
 				[
-				[NAME => 'CC', VALUE => 1],
-				[NAME => 'LD', VALUE => 2],
+				{NAME => 'CC', VALUE => 1},
+				{NAME => 'LD', VALUE => 2},
 				],
 			) ;
 

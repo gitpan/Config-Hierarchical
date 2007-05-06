@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.02;
+$VERSION     = 0.03;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -40,7 +40,11 @@ Readonly my $VALID_OPTIONS =>
 			OVERRIDE
 			SILENT_NOT_EXISTS SILENT_OVERRIDE
 			VERBOSE
-			FILE LINE )
+			FILE LINE 
+			
+			ALIAS
+			DATA_TREEDUMPER_OPTIONS
+			)
 	} ;
 
 #-------------------------------------------------------------------------------
@@ -51,7 +55,8 @@ Readonly my $VALID_OPTIONS =>
 
 =head1 SYNOPSIS
 
-  
+  use Config::Hierarchical ;
+   
   my $config = new Config::Hierarchical(); 
   
   # or
@@ -63,6 +68,7 @@ Readonly my $VALID_OPTIONS =>
 			DISABLE_SILENT_OPTIONS     => 0,
 			CATEGORY_NAMES             => ['<CLI>', '<PBS>', 'PARENT', 'LOCAL', 'CURRENT'],
 			DEFAULT_CATEGORY           => 'CURRENT',
+			
 			WARN_FOR_EXPLICIT_CATEGORY => 0,
 			
 			GET_CATEGORIES => 
@@ -99,28 +105,41 @@ Readonly my $VALID_OPTIONS =>
 				
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
-				[CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1],
+				{
+				CATEGORY => 'PBS',
+				ALIASES  => $pbs_config,
+				HISTORY  => ....,
+				COMMENT  => ....,
+				},
 				
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'AS', VALUE => 4,],
-				[CATEGORY => 'CURRENT', NAME => 'VARIABLE_WITH_HISTORY', VALUE => $previous_value, HISTORY => $history ],
-				} ,
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
+				[CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1},
+				
+				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'AS', VALUE => 4,},
+				{CATEGORY => 'CURRENT', NAME => 'VARIABLE_WITH_HISTORY', VALUE => $previous_value, HISTORY => $history },
+				] ,
+				
+			LOCKED_CATEGORIES => ['CLI'],
 			) ;
 	
   $config->Set(NAME => 'CC', VALUE => 'gcc') ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', CATEGORY => 'CLI') ;
-  $config->Set(NAME => 'CC', VALUE => 'gcc', IGNORE_LOCK => 1) ;
+  $config->Set(NAME => 'CC', VALUE => 'gcc', FORCE_LOCK => 1) ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', LOCK => 1) ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', SILENT_OVERRIDE => 1) ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', COMMENT => 'we prefer gcc') ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', CHECK_LOWER_LEVEL_CATEGORIES => 1) ;
   
+  $config->Exists(NAME => 'CC') ;
+  
+  $config->GetKeyValueTuples() ;
+  
   $config->SetMultiple
 	(
 	{FORCE_LOCK => 1}
-	[NAME => 'CC', VALUE => 'gcc', SILENT_OVERRIDE => 1],
-	[NAME => 'LD', VALUE => 'ld'],
+	{NAME => 'CC', VALUE => 'gcc', SILENT_OVERRIDE => 1},
+	{NAME => 'LD', VALUE => 'ld'},
 	) ;
   
   $config->Set(CC => 'gcc') ;
@@ -137,6 +156,10 @@ Readonly my $VALID_OPTIONS =>
   
   $config->SetDisableSilentOptions(1) ;
 	
+  $config->LockCategories('PBS') ;
+  $config->UnlockCategories('CLI', 'PBS') ;
+  $config->IsCategoryLocked('PBS') ;
+  
   $config->Lock(NAME => 'CC') ;
   $config->Unlock(NAME => 'CC', CATEGORY => 'CLI') ;
   $config->IsLocked(NAME => 'CC') ;
@@ -238,7 +261,7 @@ an error will be generated.
 
 =item * DISABLE_SILENT_OPTIONS
 
-  my $config = new Config::Hierarchical(NAME => 'some_namespace',	DISABLE_SILENT_OPTIONS => 1) ;
+  my $config = new Config::Hierarchical(NAME => 'some_namespace', DISABLE_SILENT_OPTIONS => 1) ;
 
 When this option is set, B<SILENT_OVERRIDE> and B<SILENT_NOT_EXISTS> will be ignored and a
 warning will be displayed.
@@ -336,15 +359,40 @@ Lets you initialize the Config::Hierarchical object. Each entry will be passed t
 			...
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1],
-				[CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1],
+				{ # aliased category
+				CATEGORY => 'PBS',
+				ALIASES  => $pbs_config,
+				HISTORY  => ....,
+				COMMENT  => ....,
+				},
 				
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'AS', VALUE => 4,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
+				{CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1},
+				
+				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'AS', VALUE => 4,},
 				} ,
 			) ;
 
 See L<Set> for options to B<INITIAL_VALUES>.
+
+B<Aliased categories> allow you to use a category to refer to  an existing Config::Hierarchical object. 
+The referenced object is read only. This is because multiple configurations might alias to the same Config::Hierarchical object.
+
+You can override the aliased category variables.
+
+=item * LOCKED_CATEGORIES
+
+Lets you lock categories making them read only. values in B<INITIAL_VALUES> are used before locking
+the category.
+
+  my $config = new Config::Hierarchical
+			(
+			...
+			LOCKED_CATEGORIES => ['CLI', 'PBS'],
+			) ;
+
+See L<LockCategories> and L<IsCategoryLocked>.
 
 =item * VALIDATORS
 
@@ -399,6 +447,22 @@ return($self) ;
 
 #-------------------------------------------------------------------------------
 
+sub GetInformation
+{
+
+=head2 GetInformation
+
+Returns the configuration name and it's creation location.
+
+=cut
+
+my ($self) = @_ ;
+
+return($self->{NAME}, "$self->{FILE}:$self->{LINE}") ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub Setup
 {
 
@@ -420,13 +484,13 @@ if (@setup_data % 2)
 	NAME                   => 'Anonymous',
 	CATEGORY_NAMES         => ['CURRENT'],
 	DISABLE_SILENT_OPTIONS => 0,
-		
+	FILE                   => $file_name,
+	LINE                   => $line,
+	
 	@setup_data,
 	
 	CATEGORIES             => {},
 	TIME_STAMP             => 0,
-	FILE                   => $file_name,
-	LINE                   => $line,
 	) ;
 
 my $location = "$self->{FILE}:$self->{LINE}" ;
@@ -435,9 +499,78 @@ $self->{INTERACTION}{INFO} ||= \&CORE::print ;
 $self->{INTERACTION}{WARN} ||= \&Carp::carp ;
 $self->{INTERACTION}{DIE}  ||= \&Carp::confess ;
 
+
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}('Creating ' . ref($self) . " '$self->{NAME}' at $location.\n") ;
+	}
+
+$self->SetupCategories($location) ;
+
+if(exists $self->{VALIDATORS})
+	{
+	$self->AddValidators($self->{VALIDATORS}, $location) ;
+	delete $self->{VALIDATORS} ;
+	}
+	
+# temporarely remove the locked categories till we have handled INITIAL_VALUES
+my $category_locks ;
+
+if(exists $self->{LOCKED_CATEGORIES})
+	{
+	if('ARRAY' ne ref $self->{LOCKED_CATEGORIES})
+		{
+		$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid 'LOCKED_CATEGORIES' at '$location'!") ;
+		}
+		
+	$category_locks = $self->{LOCKED_CATEGORIES}  ;
+	delete $self->{LOCKED_CATEGORIES} ;
+	}
+	
+if(exists $self->{INITIAL_VALUES})
+	{
+	for my $element_data (@{$self->{INITIAL_VALUES}})
+		{
+		if(exists $element_data->{ALIAS})
+			{
+			$self->SetAlias(FILE => $self->{FILE}, LINE => $self->{LINE}, %{$element_data}) ;
+			}
+		else
+			{
+			$self->Set(FILE => $self->{FILE}, LINE => $self->{LINE}, %{$element_data}) ;
+			}
+		}
+		
+	delete $self->{INITIAL_VALUES} ;
+	
+	if(defined $category_locks)
+		{
+		#TODO:  should be a category attribute not a config attribute
+		$self->{LOCKED_CATEGORIES}  = { map {$_ => 1} @{$category_locks} } ;
+		}
+	}
+	
+CreateCustomGetFunctions(keys %{ $self->{GET_CATEGORIES} }) if exists $self->{GET_CATEGORIES} ;
+
+return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub SetupCategories
+{
+
+=head2 SetupCategories
+
+Helper sub called by new. This shall not be used directly.
+
+=cut
+
+my ($self, $location) = @_ ;
+
 # find the protected categories and removes the brackets from the name
 $self->{PROTECTED_CATEGORIES} = { map{ if(/^<(.*)>$/xm) {$1 => 1} else {} } @{ $self->{CATEGORY_NAMES} } } ;
-	
+
 my @seen_categories ;
 for my $name (@{$self->{CATEGORY_NAMES}})
 	{
@@ -476,30 +609,7 @@ unless(exists $self->{VALID_CATEGORIES}{$self->{DEFAULT_CATEGORY}})
 	{
 	$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid default category '$self->{DEFAULT_CATEGORY}' at '$location'!") ;
 	}
-
-if($self->{VERBOSE})
-	{
-	$self->{INTERACTION}{INFO}('Created ' . ref($self) . " '$self->{NAME}' at $location.\n") ;
-	}
-
-if(exists $self->{VALIDATORS})
-	{
-	$self->AddValidators($self->{VALIDATORS}, $location) ;
-	delete $self->{VALIDATORS} ;
-	}
 	
-if(exists $self->{INITIAL_VALUES})
-	{
-	for my $element_data (@{$self->{INITIAL_VALUES}})
-		{
-		$self->Set(FILE => $self->{FILE}, LINE => $self->{LINE}, @{$element_data}) ;
-		}
-		
-	delete $self->{INITIAL_VALUES} ;
-	}
-	
-CreateCustomGetFunctions(keys %{ $self->{GET_CATEGORIES} }) if exists $self->{GET_CATEGORIES} ;
-
 return(1) ;
 }
 
@@ -613,6 +723,11 @@ for my $validator (keys %{$validator_definition->{VALIDATORS}})
 	{
 	my ($config_variable_value_exists, $config_variable_value) ;
 
+	if(exists $self->{ALIASED_CATEGORIES}{$category_name})
+		{
+		$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't Add validator '$validator' to aliased category '${category_name}'at '$location'.\n") ;
+		}
+		
 	if($self->{VERBOSE})
 		{
 		$self->{INTERACTION}{INFO}->("$self->{NAME}: Adding validator '$validator' defined at '$location' to '${category_name}::$variable_name'.\n") ;
@@ -628,12 +743,16 @@ for my $validator (keys %{$validator_definition->{VALIDATORS}})
 		}
 	else
 		{
-		#TODO: add creation to history
 		$self->{CATEGORIES}{$category_name}{$variable_name} = {} ;
 		}
 
 	my $config_variable = $self->{CATEGORIES}{$category_name}{$variable_name} ;
 
+	if('CODE' ne ref $validator_definition->{VALIDATORS}{$validator})
+		{
+		$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid validator '$validator' (must be a code reference) at '$location'!") ;
+		}
+		
 	if(exists $config_variable->{VALIDATORS}{$validator})
 		{
 		# overriding, warn user
@@ -643,11 +762,6 @@ for my $validator (keys %{$validator_definition->{VALIDATORS}})
 			. '(originaly defined at ' . $config_variable->{VALIDATORS}{$validator}{ORIGIN} . ') '
 			. "at '$location'!"
 			) ;
-		}
-		
-	if('CODE' ne ref $validator_definition->{VALIDATORS}{$validator})
-		{
-		$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid validator '$validator' (must be a code reference) at '$location'!") ;
 		}
 		
 	$config_variable->{VALIDATORS}{$validator}{ORIGIN} = $location ;
@@ -664,6 +778,111 @@ for my $validator (keys %{$validator_definition->{VALIDATORS}})
 			}
 		}
 	}
+
+return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub SetAlias
+{
+	
+=head2 SetAlias
+
+Used to handle category aliases. This shall not be used directly.
+
+  my $pbs_config = new Config::Hierarchical(...) ;
+  
+  my $config = new Config::Hierarchical
+			(
+			NAME                       => 'some_namespace',
+			CATEGORY_NAMES             => ['<CLI>', '<PBS>', 'PARENT', 'LOCAL', 'CURRENT'],
+				
+			INITIAL_VALUES =>
+				[
+				{
+				CATEGORY => 'PBS',
+				ALIAS    => $pbs_config,
+				HISTORY  => ....,
+				COMMENT  => ....,
+				},
+				{NAME => 'CC1', VALUE => 'gcc'},
+				...
+				] ,
+				
+			) ;
+
+B<CATEGORY> and B<ALIAS> must be passed as arguments. See L<new> for details about aliased categories.
+
+=head3 Options
+
+=over 2
+
+=item * HISTORY
+
+=item * COMMENT
+
+=item * CHECK_LOWER_LEVEL_CATEGORIES 
+
+See L<Set> for details.
+
+=back
+
+=cut
+
+my ($self, @options) = @_ ;
+
+$self->CheckOptionNames($VALID_OPTIONS, @options) ;
+
+my %options = @options ;
+
+my $location = "$options{FILE}:$options{LINE}" ;
+my $category = $options{CATEGORY} ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$category' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid 'NAME' at '$location'!") if defined $options{NAME} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid 'VALUE' at '$location'!") if defined $options{VALUE} ;
+
+# category must not have been set or aliased
+if(exists $self->{CATEGORIES}{$category})
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't alias a category that's is already set at '$location'!") ;
+	}
+
+# inform of action if option set
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: SetAlias called for category '$category' at '$location'.\n") ;
+	}
+
+use Config::Hierarchical::Tie::ReadOnly ;
+
+my %alias_hash ;
+tie %alias_hash, 'Config::Hierarchical::Tie::ReadOnly', $options{ALIAS} ; ## no critic (ProhibitTies)
+
+# first check we can do this
+for($options{ALIAS}->GetKeyValueTuples())
+	{
+	$self->Set
+			(
+			CATEGORY => $category,
+			NAME => $_->{NAME},
+			VALUE => $_->{VALUE},
+			CHECK_LOWER_LEVEL_CATEGORIES => $options{CHECK_LOWER_LEVEL_CATEGORIES},
+			FILE => $options{FILE},
+			LINE => $options{LINE},
+			)	
+	}
+
+#override everything
+$self->{CATEGORIES}{$category} = \%alias_hash ;
+
+$self->{ALIASED_CATEGORIES}{$category} = {} ;
+$self->{ALIASED_CATEGORIES}{$category}{COMMENT} =  $options{COMMENT} if exists $options{COMMENT} ;
+$self->{ALIASED_CATEGORIES}{$category}{HISTORY} =  {TIME => $self->{TIME_STAMP}, EVENT => $options{HISTORY}} if exists $options{HISTORY} ;
+$self->{ALIASED_CATEGORIES}{$category}{TIME_STAMP} =  $self->{TIME_STAMP}++ ;
+
+$self->{LOCKED_CATEGORIES}{$category}++ ;
 
 return(1) ;
 }
@@ -780,7 +999,7 @@ sub Set
 		COMMENT         => 'we like gcc'
 		CATEGORY        => 'CLI',
 		VALIDATORS      => {positive_value => \&PositiveValueValidator,}
-		IGNORE_LOCK     => 1,
+		FORCE_LOCK      => 1,
 		LOCK            => 1,
 		OVERRIDE        => 1,
 		SILENT_OVERRIDE => 1,
@@ -801,98 +1020,7 @@ B<NAME> and B<VALUE> must be passed as arguments.
 The argument passed is kept in the configuration variable. You can pass any scalar variable; B<Config::Hierarchical> will
 not manipulate this information. This could be done automatically but was kept manual for efficiency and control reasons.
 
-See L<t/013_history.t> for a complete example
-
-When dumped with this filter:
-
-	my $history_as_first_key =
-		sub
-		{
-		my ($s, $level, $path, $keys) = @_ ;
-		
-		if('HASH' eq ref $s && exists $s->{HISTORY})
-			{
-			my @keys = ('HISTORY', (sort grep {$_ ne 'HISTORY'} keys %$s) ) ;
-			
-			return('HASH', undef, @keys) ;
-			}
-		else
-			{
-			return(Data::TreeDumper::DefaultNodesToDisplay($s)) ;
-			}
-		} ;
-	
-	my($value, $category) = $config3->Get(NAME => 'CC', GET_CATEGORY => 1) ;
-	my $history = $config->GetHistory(NAME => 'CC') ;
-	my $title = "'CC' = '$value3' from category '$category3':" ;
-	
-	print DumpTree($history3, $title3, FILTER => $history_as_first_key, DISPLAY_ADDRESS => 0) ;
-	
-
-we get this output:
-
-	'CC' = '5' from category 'CURRENT':
-	|- 0 
-	|  |- HISTORY 
-	|  |  |- 0 
-	|  |  |  |- HISTORY 
-	|  |  |  |  |- 0 
-	|  |  |  |  |  |- ACTION = CREATE AND SET 
-	|  |  |  |  |  |- CATEGORY = CURRENT 
-	|  |  |  |  |  |- FILE = 013_history.pl 
-	|  |  |  |  |  |- LINE = 27 
-	|  |  |  |  |  |- STATUS = OK. 
-	|  |  |  |  |  |- TIME_STAMP = 0 
-	|  |  |  |  |  `- VALUE = 1 
-	|  |  |  |  `- 1 
-	|  |  |  |     |- ACTION = SET 
-	|  |  |  |     |- CATEGORY = CURRENT 
-	|  |  |  |     |- FILE = 013_history.pl 
-	|  |  |  |     |- LINE = 29 
-	|  |  |  |     |- STATUS = OK. 
-	|  |  |  |     |- TIME_STAMP = 1 
-	|  |  |  |     `- VALUE = 2 
-	|  |  |  |- ACTION = CREATE, SET HISTORY AND SET 
-	|  |  |  |- CATEGORY = PARENT 
-	|  |  |  |- FILE = 013_history.pl 
-	|  |  |  |- LINE = 50 
-	|  |  |  |- STATUS = OK. 
-	|  |  |  |- TIME_STAMP = 0 
-	|  |  |  `- VALUE = 2 
-	|  |  `- 1 
-	|  |     |- ACTION = CREATE AND SET 
-	|  |     |- CATEGORY = CURRENT 
-	|  |     |- FILE = 013_history.pl 
-	|  |     |- LINE = 52 
-	|  |     |- OVERRIDE = 1 
-	|  |     |- STATUS = Overriding 'PARENT::CC'.OK. 
-	|  |     |- TIME_STAMP = 1 
-	|  |     `- VALUE = 3 
-	|  |- ACTION = CREATE, SET HISTORY AND SET 
-	|  |- CATEGORY = PARENT 
-	|  |- FILE = 013_history.pl 
-	|  |- LINE = 73 
-	|  |- STATUS = OK. 
-	|  |- TIME_STAMP = 0 
-	|  `- VALUE = 3 
-	|- 1 
-	|  |- ACTION = CREATE AND SET 
-	|  |- CATEGORY = CURRENT 
-	|  |- FILE = 013_history.pl 
-	|  |- LINE = 75 
-	|  |- OVERRIDE = 1 
-	|  |- STATUS = Overriding 'PARENT::CC'.OK. 
-	|  |- TIME_STAMP = 1 
-	|  `- VALUE = 4 
-	`- 2 
-	   |- ACTION = SET 
-	   |- CATEGORY = CURRENT 
-	   |- FILE = 013_history.pl 
-	   |- LINE = 76 
-	   |- OVERRIDE = 1 (due to previous override) 
-	   |- STATUS = Overriding 'PARENT::CC'.OK. 
-	   |- TIME_STAMP = 2 
-	   `- VALUE = 5 
+See L<GetHistory>.
 
 =item * COMMENT
 
@@ -929,7 +1057,7 @@ is overridden, it's value will always be the override value even if it is set ag
 						
 				INITIAL_VALUES  =>
 					[
-					[NAME => 'CC', CATEGORY => 'PARENT', VALUE => 'parent'],
+					{NAME => 'CC', CATEGORY => 'PARENT', VALUE => 'parent'},
 					] ,
 				) ;
 				
@@ -995,6 +1123,11 @@ $self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless defined $options{VALUE} ;
 
+if(exists $self->{ALIASED_CATEGORIES}{$options{CATEGORY}})
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't set aliased category (read only) at '$location'!")  ;
+	}
+
 # inform of action if option set
 if($self->{VERBOSE})
 	{
@@ -1012,6 +1145,11 @@ if(defined $self->{INTERACTION}{DEBUG})
 		) ;
 	}
 	
+if(exists $self->{LOCKED_CATEGORIES}{$options{CATEGORY}})
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Variable '$options{CATEGORY}::$options{NAME}', category '$options{CATEGORY}' was locked at '$location'.\n") ;
+	}
+
 if
 	(
 	      exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}}
@@ -1080,13 +1218,12 @@ for my $category (@reversed_higher_priority_categories)
 			my $message = "'<${category}>::$options->{NAME}' takes precedence." ;
 			$set_status .=  $message ;
 			
-			if
-				(
-				      exists $self->{CATEGORIES}{$category}{$options->{NAME}}
-				&& exists $self->{CATEGORIES}{$category}{$options->{NAME}}{VALUE}
-				)
+			my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+				= $self->CheckVariableInCategory($category, $options->{NAME}) ;
+				
+			if($name_exists_in_other_category && $value_exists_in_other_category)
 				{
-				if(!Compare($self->{CATEGORIES}{$category}{$options->{NAME}}{VALUE}, $options->{VALUE}))
+				if(!Compare($value_in_other_category, $options->{VALUE}))
 					{
 					$warnings   .= "\t$message\n" ;
 					}
@@ -1115,13 +1252,12 @@ for my $category (@reversed_higher_priority_categories)
 		
 		$set_status .=  $message ;
 		
-		if
-			(
-			      exists $self->{CATEGORIES}{$category}{$options->{NAME}}
-			&& exists $self->{CATEGORIES}{$category}{$options->{NAME}}{VALUE}
-			)
+		my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+			= $self->CheckVariableInCategory($category, $options->{NAME}) ;
+		
+		if($name_exists_in_other_category && $value_exists_in_other_category)
 			{
-			if(!Compare($self->{CATEGORIES}{$category}{$options->{NAME}}{VALUE}, $options->{VALUE}))
+			if(!Compare($value_in_other_category, $options->{VALUE}))
 				{
 				$warnings   .= "\t$message\n" ;
 				}
@@ -1132,6 +1268,45 @@ for my $category (@reversed_higher_priority_categories)
 	}
 
 return($set_status, $warnings) ;
+}
+
+sub CheckVariableInCategory
+{
+
+=head2 CheckVariableInCategory
+
+This shall not be used directly.
+
+=cut
+
+my ($self, $category, $name) = @_ ;
+my ($name_exists, $value_exists, $value, $overridden) ;
+
+if(exists $self->{CATEGORIES}{$category} && exists $self->{CATEGORIES}{$category}{$name})
+	{
+	$name_exists++ ;
+	
+	if(exists $self->{ALIASED_CATEGORIES}{$category})
+		{
+		$value_exists = 1 ;
+		$value = $self->{CATEGORIES}{$category}{$name} ;
+		
+		$overridden = $self->{ALIASED_CATEGORIES}{$category}{$name}{OVERRIDDEN} ;
+		}
+	else
+		{
+		if(exists $self->{CATEGORIES}{$category}{$name}{VALUE})
+			{
+			$value_exists = 1 ;
+			$value = $self->{CATEGORIES}{$category}{$name}{VALUE} ;
+			
+			$overridden = exists $self->{CATEGORIES}{$category}{$name}{OVERRIDDEN} ;
+			}
+		}
+	}
+
+
+return ($name_exists, $value_exists, $value, $overridden)  ;
 }
 
 #-------------------------------------------------------------------------------
@@ -1151,13 +1326,12 @@ my ($set_status, $warnings) = ($EMPTY_STRING, $EMPTY_STRING) ;
 
 my $override_message = "Overriding '${category}::$variable_name'" ;
 
-if
-	(
-	      exists $self->{CATEGORIES}{$category}{$variable_name}
-	&& exists $self->{CATEGORIES}{$category}{$variable_name}{VALUE}
-	)
+my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+	= $self->CheckVariableInCategory($category, $variable_name) ;
+
+if($name_exists_in_other_category && $value_exists_in_other_category)
 	{
-	if(!Compare($self->{CATEGORIES}{$category}{$variable_name}{VALUE}, $value))
+	if(!Compare($value_in_other_category, $value))
 		{
 		my $no_silent_override = (! ($silent_override || $self->{DISABLE_SILENT_OPTIONS})) ;
 		
@@ -1175,7 +1349,15 @@ else
 	}
 	
 #last to avoid autovivication
-$self->{CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} = $location ;
+if(exists $self->{ALIASED_CATEGORIES}{$category})
+	{
+	# override localy, aliased config is not modified
+	$self->{ALIASED_CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} = $location;
+	}
+else
+	{
+	$self->{CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} = $location ;
+	}
 
 return($set_status, $warnings) ;
 }
@@ -1209,14 +1391,13 @@ for my $category (reverse @{$self->{CATEGORY_NAMES}})
 	
 for my $category (reverse @lower_priority_categories)
 	{
+	my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+		= $self->CheckVariableInCategory($category, $options->{NAME}) ;
+	
 	if
 		(
-		exists $self->{CATEGORIES}{$category}{$options->{NAME}}
-		&& ! Compare
-			(
-			$self->{CATEGORIES}{$category}{$options->{NAME}}{VALUE},
-			$options->{VALUE}
-			)
+		   $name_exists_in_other_category 
+		&& !Compare($value_in_other_category, $options->{VALUE})
 		)
 		{
 		my $message = exists $self->{PROTECTED_CATEGORIES}{$category} ?
@@ -1308,28 +1489,36 @@ $config_variable->{VALUE} = $options->{VALUE} ;
 $config_variable->{OVERRIDE} = $location if $options->{OVERRIDE} ;
 
 #~ set lock state
+my $lock = $EMPTY_STRING ;
+my $force_lock = $options->{FORCE_LOCK} ? 'FORCE_LOCK, ' : $EMPTY_STRING ;
+
 if(exists $options->{LOCK})
 	{
 	if($options->{LOCK})
 		{
+		$lock = 'LOCK(1), ' ;
 		$config_variable->{LOCKED} = $location  ;
 		}
 	else
 		{
+		$lock = 'LOCK(0), ' ;
 		delete $config_variable->{LOCKED} ;
 		}
 	}
 	
 # update history
-my $options_to_remember = { %{$options} } ; # keep local copy
-delete $options_to_remember->{CATEGORY} ;
-delete $options_to_remember->{NAME} ;
-$options_to_remember->{ACTION}     = $action ;
-$options_to_remember->{STATUS}     = $set_status ;
-$options_to_remember->{TIME_STAMP} = $self->{TIME_STAMP} ;
-$self->{TIME_STAMP}++ ;
 
-push @{$config_variable->{HISTORY}}, $options_to_remember ;
+my $override = exists $options->{OVERRIDE} ? 'OVERRIDE, ' : $EMPTY_STRING ;
+
+my $history = "value = '$options->{VALUE}'. $action, ${override}${force_lock}${lock}category = '$options->{CATEGORY}' at '$options->{FILE}:$options->{LINE}', status = $set_status" ;
+
+my $history_data = {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
+$history_data->{HISTORY} = $options->{HISTORY} if exists $options->{HISTORY} ;
+$history_data->{COMMENT} = $options->{COMMENT} if exists $options->{COMMENT} ;
+
+push @{$config_variable->{HISTORY}}, $history_data ;
+
+$self->{TIME_STAMP}++ ;
 
 return(1) ;
 }
@@ -1400,7 +1589,7 @@ sub Get
 
 =head2 Get
 
-  my $config = new Config::Hierarchical(INITIAL_VALUES => [[NAME => 'CC', VALUE => 'gcc']]) ;
+  my $config = new Config::Hierarchical(INITIAL_VALUES => [{NAME => 'CC', VALUE => 'gcc'}]) ;
   
   my $cc = $config->Get(NAME => 'CC') ;
   my $ld = $config->Get(NAME => 'LD', SILENT_NOT_EXISTS => 1) ;
@@ -1453,7 +1642,10 @@ if(exists $options{CATEGORIES_TO_EXTRACT_FROM})
 	{
 	if($self->{WARN_FOR_EXPLICIT_CATEGORY})
 		{
-		$self->{INTERACTION}{WARN}->("$self->{NAME}: Getting '$options{NAME}' using explicit category at '$location'!\n") ;
+		my $plural = 'y' ;
+		$plural = 'ies' if (@{$options{CATEGORIES_TO_EXTRACT_FROM}} > 1) ;
+		
+		$self->{INTERACTION}{WARN}->("$self->{NAME}: Getting '$options{NAME}' using explicit categor$plural at '$location'!\n") ;
 		}
 	}
 
@@ -1501,16 +1693,19 @@ my ($value_not_found, $value, $found_in_category) = (1, undef, undef) ;
 
 for my $category (@categories_to_extract_from)
 	{
-	if(exists $self->{CATEGORIES}{$category}{$options{NAME}})
+	my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category, $name_in_other_category_is_overriden) 
+		= $self->CheckVariableInCategory($category, $options{NAME}) ;
+	
+	if($name_exists_in_other_category)
 		{
 		# remember the value in case the overriding category is not in the list of categories to 
 		# extract from
 		$value_not_found   = 0 ;
-		$value             =  $self->{CATEGORIES}{$category}{$options{NAME}}{VALUE} ;
+		$value             =  $value_in_other_category ;
 		$found_in_category = $category ;
 		
 		# check if lower priority category did an override
-		if(exists $self->{CATEGORIES}{$category}{$options{NAME}}{OVERRIDDEN})
+		if($name_in_other_category_is_overriden)
 			{
 			# get value from overriding category
 			}
@@ -1608,7 +1803,7 @@ sub GetMultiple
 
 =head2 GetMultiple
 
-  my $config = new Config::Hierarchical(INITIAL_VALUES => [[NAME => 'CC', VALUE => 'gcc']]) ;
+  my $config = new Config::Hierarchical(INITIAL_VALUES => [{NAME => 'CC', VALUE => 'gcc'}]) ;
   
   my @values = $config->GetMultiple('CC') ;
   
@@ -1618,7 +1813,6 @@ sub GetMultiple
 			'CC',
 			'AR'
 			) ;
-
 
 If the first argument is a hash reference, the elements of the hash will be used for each element to set.
 
@@ -1678,21 +1872,174 @@ return(@values) ;
 
 #-------------------------------------------------------------------------------
 
+sub GetKeys
+{
+	
+=head2 GetKeys
+
+  my @keys = $config->GetKeys() ;
+
+Returns the names of the element in the config object.
+
+=head3 Options
+
+=over 2
+
+=item *  CATEGORIES_TO_EXTRACT_FROM
+
+if set, B<GetKeyValueTuples> will only search in the specified categories.
+
+=back
+
+
+A warning will be generated if:
+
+=over 2
+
+=item it is called in void context
+
+=back
+
+=cut
+
+my ($self, @options) = @_ ;
+
+my ($package, $file_name, $line) = caller() ;
+my $location = "$file_name:$line" ;
+
+$self->CheckOptionNames($VALID_OPTIONS, @options) ;
+
+my %options = @options ;
+
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: 'GetKeys' at '$location'\n") ;
+	}
+
+unless(defined wantarray)
+	{
+	$self->{INTERACTION}{WARN}->("$self->{NAME}: 'GetKeys' called in void context at '$file_name:$line'!\n") ;
+	}
+	
+my (%variables, @categories_to_extract_from) ;
+
+if(exists $options{CATEGORIES_TO_EXTRACT_FROM})
+	{
+	@categories_to_extract_from = @{$options{CATEGORIES_TO_EXTRACT_FROM}} ;
+	}
+else
+	{
+	@categories_to_extract_from = @{$self->{CATEGORY_NAMES}} ;
+	}
+	
+my %hash = map
+			{
+			$_ => 1
+			} map
+				{
+				keys %{$self->{CATEGORIES}{$_}} ;
+				}  @categories_to_extract_from ;
+
+return(keys %hash) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetKeyValueTuples
+{
+
+=head2 GetKeyValueTuples
+
+	my $config_1 = new Config::Hierarchical(.....) ;
+	
+	my $config_2 = new Config::Hierarchical
+					(
+					NAME => 'config 2',
+					
+					CATEGORY_NAMES         => ['PARENT', 'CURRENT'],
+					DEFAULT_CATEGORY       => 'CURRENT',
+					
+					INITIAL_VALUES =>
+						[
+						# Initializing a category from another config
+						map
+							({
+								{
+								NAME     => $_->{NAME},
+								VALUE    => $_->{VALUE}, 
+								CATEGORY => 'PARENT',
+								LOCK     => 1,
+								HISTORY  => $config_1->GetHistory(NAME => $_->{NAME}),
+								}
+							} $config_1->GetKeyValueTuples()),
+						
+						{NAME => 'CC', VALUE => 1,},
+						]
+					) ;
+
+Returns a list of hash references containing the name and the value of each configuration variable
+contained in the object. This can be useful when you you create config objects from data in other objects.
+
+=head3 Options
+
+=over 2
+
+=item *  CATEGORIES_TO_EXTRACT_FROM
+
+if set, B<GetKeyValueTuples> will only search in the specified categories.
+
+=back
+
+=cut
+
+my ($self, @options) = @_ ;
+
+my ($package, $file_name, $line) = caller() ;
+
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: 'GetKeyValueTuples' at '$file_name:$line'\n") ;
+	}
+
+unless(defined wantarray)
+	{
+	$self->{INTERACTION}{WARN}->("$self->{NAME}: 'GetKeyValueTuples' in void context at '$file_name:$line'!\n") ;
+	}
+
+# run debug hook if any
+if(defined $self->{INTERACTION}{DEBUG})
+	{
+	$self->{INTERACTION}{DEBUG}->("'GetKeyValueTuples' at '$file_name:$line'.", $self, \@options,) ;
+	}
+
+my @list ;
+my %hash = %{$self->GetHashRef(@options)} ;
+ 
+while(my($n, $v) = each %hash)
+	{
+	push @list, {NAME => $n, VALUE => $v} ;
+	}
+	
+return(@list) ;
+}
+
+#-------------------------------------------------------------------------------
+
 sub GetHashRef
 {
 
 =head2 GetHashRef
 
-  my $hash_ref = $config->GetHash() ;
+  my $hash_ref = $config->GetHashRef() ;
 
-Returns a hash reference containing all the elements in the container. The elements value are extracted with the rules
+Returns a hash reference containing a copy of all the elements in the container. The elements value are extracted with the rules
 used in L<Get>.
 
-This function will generate an error if:
+This function will generate an error if any argument is passed to it.
+
+it will also generate a warning if:
 
 =over 2
-
-=item any argument is passed to it
 
 =item it is called in void context
 
@@ -1703,29 +2050,18 @@ This function will generate an error if:
 =cut
 
 my ($self, @options) = @_ ;
-my ($package, $file_name, $line) = caller() ;
-my (%options) ;
 
-if(@options)
+my ($package, $file_name, $line) = caller() ;
+my $location = "$file_name:$line" ;
+
+$self->CheckOptionNames($VALID_OPTIONS, @options) ;
+
+my %options = @options ;
+
+if($self->{VERBOSE})
 	{
-	if(@options == 2)
-		{
-		if($options[0] eq 'CATEGORIES_TO_EXTRACT_FROM')
-			{
-			%options = @options ;
-			}
-		else
-			{
-			$self->{INTERACTION}{DIE}->("$self->{NAME}: 'GetHashRef' doesn't take arguments at '$file_name:$line'!\n") ;
-			}
-		}
-	else
-		{
-		$self->{INTERACTION}{DIE}->("$self->{NAME}: 'GetHashRef' doesn't take arguments at '$file_name:$line'!\n") ;
-		}
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: 'GetHashRef' at '$location'\n") ;
 	}
-#else
-	# OK no options passed to function
 
 if(defined wantarray)
 	{
@@ -1822,6 +2158,38 @@ return(1) ;
 
 #-------------------------------------------------------------------------------
 	
+sub LockCategories
+{
+
+=head2 LockCategories
+
+  $config->LockCategories('PARENT', 'OTHER') ;
+
+Locks the categories passed as argument. A variable in a locked category can not be set.
+An attempt to set a locked variable will generate an error. B<FORCE_LOCK> has no effect on locked categories.
+
+An error is generated if you try to lock a category that doesn't exist.
+
+See L<UnlockCategories>.
+
+=cut
+
+my ($self, @categories) = @_ ;
+
+my ($package, $file_name, $line) = caller() ;
+my $location = "$file_name:$line" ;
+
+for my $category (@categories)
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$category' at '$location'!") unless exists $self->{VALID_CATEGORIES}{$category} ;
+	$self->{LOCKED_CATEGORIES}{$category} = 1 ;
+	}
+	
+return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+	
 sub Lock
 {
 
@@ -1877,21 +2245,39 @@ if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
 	
 	$config_variable->{LOCKED} = $location ;
 	
-	# update history
-	my $options_to_remember = {%options} ;
-	delete $options_to_remember->{CATEGORY} ;
-	delete $options_to_remember->{NAME} ;
-	$options_to_remember->{STATUS}     = 'Lock: OK' ;
-	$options_to_remember->{TIME_STAMP} = $self->{TIME_STAMP} ;
-	$self->{TIME_STAMP}++ ;
+	my $history = "LOCK, category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Lock: OK." ;
+	push @{$config_variable->{HISTORY}}, {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
 
-	push @{$config_variable->{HISTORY}}, $options_to_remember ;
+	$self->{TIME_STAMP}++ ;
 	}
 else
 	{
 	$self->{INTERACTION}{DIE}->("$self->{NAME}: Locking unexisting '$options{CATEGORY}::$options{NAME}' at '$location'.\n") ;
 	}
 
+return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+	
+sub UnlockCategories
+{
+
+=head2 UnlockCategories
+
+  $config->UnlockCategories('PARENT', 'OTHER') ;
+
+Unlocks the categories passed as argument.
+
+=cut
+
+my ($self, @categories) = @_ ;
+
+for my $category (@categories)
+	{
+	delete $self->{LOCKED_CATEGORIES}{$category} ;
+	}
+	
 return(1) ;
 }
 
@@ -1946,20 +2332,47 @@ if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
 	
 	delete $config_variable->{LOCKED} ;
 	
-	# update history
-	my $options_to_remember = {%options} ;
-	delete $options_to_remember->{CATEGORY} ;
-	delete $options_to_remember->{NAME} ;
-	$options_to_remember->{STATUS}     = 'Unlock: OK' ;
-	$options_to_remember->{TIME_STAMP} = $self->{TIME_STAMP} ;
+	my $history = "UNLOCK, category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Unlock: OK." ;
+	push @{$config_variable->{HISTORY}}, {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
+	
 	$self->{TIME_STAMP}++ ;
-
-	push @{$config_variable->{HISTORY}}, $options_to_remember ;
 	}
 
 return(1) ;
 }
   
+#-------------------------------------------------------------------------------
+
+sub IsCategoryLocked
+{
+
+=head2 IsCategoryLocked
+
+  $config->IsCategoryLocked('PARENT') ;
+
+Query the lock state of a category. Querying the lock state of a category that doesn't exist generates an error.
+
+=cut
+
+my ($self, $category) = @_ ;
+
+my ($package, $file_name, $line) = caller() ;
+my $location = "$file_name:$line" ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: No category at '$location'!") unless defined $category ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$category' at '$location'!") unless exists $self->{VALID_CATEGORIES}{$category} ;
+
+if(exists $self->{LOCKED_CATEGORIES}{$category})
+	{
+	return(1) ;
+	}
+else
+	{
+	return(0) ;
+	}
+
+}
+
 #-------------------------------------------------------------------------------
 
 sub IsLocked
@@ -1997,7 +2410,7 @@ $options{CATEGORY} = $self->{DEFAULT_CATEGORY} unless exists $options{CATEGORY} 
 
 $self->CheckOptionNames($VALID_OPTIONS, %options) ;
 
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}' at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
 
 if($self->{VERBOSE})
@@ -2107,7 +2520,7 @@ sub GetHistory
   $history = $config->GetHistory(NAME => 'CC') ;
   $history = $config->GetHistory(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['PARENT']) ;
 
-Returns a reference to the variable's history or undef if the variable doesn't exist.
+Returns a reference to the variable's history or an empty list  if the variable doesn't exist.
 
 	my $config = new Config::Hierarchical
 					(
@@ -2118,7 +2531,7 @@ Returns a reference to the variable's history or undef if the variable doesn't e
 							
 					INITIAL_VALUES  =>
 						[
-						[NAME => 'CC', CATEGORY => 'PARENT', VALUE => 'parent'],
+						{NAME => 'CC', CATEGORY => 'PARENT', VALUE => 'parent'},
 						] ,
 					) ;
 					
@@ -2133,37 +2546,12 @@ Would print as:
 
 	'CC' = 'override value' from category 'CURRENT':
 	|- 0 
-	|  |- ACTION = CREATE 
-	|  |- CATEGORY = PARENT 
-	|  |- FILE = nadim.pl 
-	|  |- LINE = 14 
-	|  |- TIME_STAMP = 0 
-	|  `- VALUE = parent 
-	|- 1 
-	|  |- ACTION = SET 
-	|  |- CATEGORY = PARENT 
-	|  |- FILE = nadim.pl 
-	|  |- LINE = 14 
-	|  |- STATUS = OK. 
-	|  |- TIME_STAMP = 1 
-	|  `- VALUE = parent 
-	|- 2 
-	|  |- ACTION = CREATE 
-	|  |- CATEGORY = CURRENT 
-	|  |- FILE = nadim.pl 
-	|  |- LINE = 27 
-	|  |- OVERRIDE = 1 
-	|  |- TIME_STAMP = 2 
-	|  `- VALUE = override value 
-	`- 3 
-	   |- ACTION = SET 
-	   |- CATEGORY = CURRENT 
-	   |- FILE = nadim.pl 
-	   |- LINE = 27 
-	   |- OVERRIDE = 1 
-	   |- STATUS = Overriding 'PARENT::CC'.OK. 
-	   |- TIME_STAMP = 3 
-	   `- VALUE = override value 
+	|  |- EVENT = value = 'parent'. CREATE AND SET, category = 'PARENT' at 'nadim2.pl:21', status = OK. 
+	|  `- TIME = 0 
+	`- 1 
+	   |- EVENT = value = 'override value'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 'nadim2.pl:34', status =
+	   |  Overriding 'PARENT::CC' (existed, value was different).OK. 
+	   `- TIME = 1 
 
 while
 
@@ -2175,21 +2563,139 @@ while
 Would print as:
 
 	'CC' = 'parent' from category 'PARENT':
-	|- 0 
-	|  |- ACTION = CREATE 
-	|  |- CATEGORY = PARENT 
-	|  |- FILE = nadim.pl 
-	|  |- LINE = 14 
-	|  |- TIME_STAMP = 0 
-	|  `- VALUE = parent 
-	`- 1 
-	   |- ACTION = SET 
-	   |- CATEGORY = PARENT 
-	   |- FILE = nadim.pl 
-	   |- LINE = 14 
-	   |- STATUS = OK. 
-	   |- TIME_STAMP = 1 
-	   `- VALUE = parent 
+	`- 0 
+	   |- EVENT = value = 'parent'. CREATE AND SET, category = 'PARENT' at 'nadim2.pl:21', status = OK. 
+	   `- TIME = 0 
+
+=head3 Explicit history and comments
+
+If you passed a B<HISTORY> or a B<COMMENT> when you created or modified a variable, that information
+will be included in the history structure returned by B<GetHistory>.
+
+	my $config3 = new Config::Hierarchical
+					(
+					NAME => 'config3',
+					...
+					INITIAL_VALUES  =>
+						[
+						{
+						COMMENT => "history and value from category 2",	
+						NAME => 'CC', CATEGORY => 'PARENT', VALUE => $value2,
+						HISTORY => $history2,
+						},
+						] ,
+					...
+					) ;
+					
+	my($value3, $category3) = $config3->Get(NAME => 'CC',  GET_CATEGORY => 1) ;
+	my $title3 = "'CC' = '$value3' from category '$category3':" ;
+	my $history3 = $config3->GetHistory(NAME=> 'CC') ;
+	print DumpTree($history3, $title3, DISPLAY_ADDRESS => 0) ;
+
+Would print as:
+
+	'CC' = '3' from category 'PARENT':
+	|- 0
+	|  |- COMMENT = history and value from config 2
+	|  |- EVENT = value = '3'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 'history.pl:56', status = OK.
+	|  |- HISTORY
+	|  |  |- 0
+	...
+
+=head3 Aliased category history
+
+if you used an aliased category, The history structure returned by B<GetHistory> will automatically include the 
+history of the aliased config.
+
+	my $config0 = (...) ;
+	my $config1 = (...) ;
+	my $config2 = new Config::Hierarchical
+					(
+					...
+					INITIAL_VALUES =>
+						[
+						{
+						CATEGORY => 'PBS',
+						ALIASES  => $pbs_config,
+						HISTORY  => ....,
+						COMMENT  => ....,
+						},
+					...
+					) ;
+					
+	...
+	print DumpTree $config_3->GetHistory( NAME => 'CC1'), 'CC1', DISPLAY_ADDRESS => 0;
+
+Would print as:
+
+	CC1
+	|- 0
+	|  |- HISTORY FROM ALIASED CATEGORY 'config 1'
+	|  |  |- 0
+	|  |  |  |- HISTORY FROM ALIASED CATEGORY 'config 0'
+	|  |  |  |  `- 0
+	|  |  |  |     |- EVENT = value = '1'. CREATE AND SET, category = 'CURRENT' at 'nadim.pl:21', status = OK.
+	|  |  |  |     `- TIME = 0
+	|  |  |  `- TIME = 2
+	|  |  |- 1
+	|  |  |  |- EVENT = value = '1'. CREATE AND SET, category = 'A' at 'nadim.pl:33', status = OK.
+	|  |  |  `- TIME = 3
+	|  |  `- 2
+	|  |     |- EVENT = value = '1.1'. SET, category = 'A' at 'nadim.pl:50', status = OK.
+	|  |     `- TIME = 6
+	|  `- TIME = 3
+	|- 1
+	|  |- EVENT = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'nadim.pl:64', status = OK.
+	|  `- TIME = 4
+	`- 2
+	   |- EVENT = value = 'A2'. SET, OVERRIDE, category = 'A' at 'nadim.pl:65', status = OK.
+	   `- TIME = 5
+
+=head4 Compact display
+
+Given the following Data::TreeDumper filter
+
+	sub Compact
+	{
+	my ($s, $level, $path, $keys, $setup, $arg) = @_ ;
+
+	if('ARRAY' eq ref $s)
+		{
+		my ($index, @replacement, @keys) = (0) ;
+		
+		for my $entry( @$s)
+			{
+			if(exists $entry->{EVENT})
+				{
+				push @replacement, $entry->{EVENT} ; #. 'time: ' . $entry->{TIME};
+				push@keys, $index++ ;
+				}
+			else
+				{
+				my ($aliased_history_name) = grep {$_ ne 'TIME'} keys %$entry ;
+				
+				push @replacement, $entry->{$aliased_history_name} ;
+				push@keys, [$index, "$index = $aliased_history_name"] ;
+				$index++ ;
+				}
+			}
+		
+		return('ARRAY', \@replacement, @keys) ;
+		}
+	}
+	
+	print DumpTree $config_2->GetHistory( NAME => 'CC1'), 'CC1', DISPLAY_ADDRESS => 0, FILTER => \&Compact ;
+
+the output above becomes:
+
+	CC1
+	|- 0 = HISTORY FROM ALIASED CATEGORY 'config 1'
+	|  |- 0 = HISTORY FROM ALIASED CATEGORY 'config 0'
+	|  |  `- 0 = value = '1'. CREATE AND SET, category = 'CURRENT' at 'nadim.pl:21', status = OK.
+	|  |- 1 = value = '1'. CREATE AND SET, category = 'A' at 'nadim.pl:33', status = OK.
+	|  `- 2 = value = '1.1'. SET, category = 'A' at 'nadim.pl:50', status = OK.
+	|- 1 = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'nadim.pl:64', status = OK.
+	`- 2 = value = 'A2'. SET, OVERRIDE, category = 'A' at 'nadim.pl:65', status = OK.
 
 =cut
 
@@ -2212,12 +2718,10 @@ unless(defined $options{FILE})
 
 my $location = "$options{FILE}:$options{LINE}" ;
 
-$options{CATEGORY} = $self->{DEFAULT_CATEGORY} unless exists $options{CATEGORY} ;
-
 $self->CheckOptionNames($VALID_OPTIONS, %options) ;
 
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: bad argument 'CATEGORY' did you mean 'CATEGORIES_TO_EXTRACT_FROM'? at '$location'!") if exists $options{CATEGORY} ;
 
 my @history ;
 my @categories_to_extract_from ;
@@ -2242,27 +2746,123 @@ for my $category (@categories_to_extract_from)
 	{
 	$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$category' at '$location'!") unless exists $self->{VALID_CATEGORIES}{$category} ;
 		
-	if(exists $self->{CATEGORIES}{$category}{$options{NAME}})
-		{
-		#~ if(exists $self->{CATEGORIES}{$category}{$options{NAME}}{PREVIOUS_HISTORY})
-			#~ {
-			#~ push @history, @{$self->{CATEGORIES}{$category}{$options{NAME}}{PREVIOUS_HISTORY}} ;
-			#~ }
-			
-		push @history, map{ {%{$_}, CATEGORY => $category} } @{$self->{CATEGORIES}{$category}{$options{NAME}}{HISTORY}} ;
-		}
+	push @history, $self->GetVariableHistory($category, $options{NAME})  ;
 	}
 	
-@history = sort {$a->{TIME_STAMP} <=> $b->{TIME_STAMP}} @history ;
+@history = sort {$a->{TIME} <=> $b->{TIME}} @history ;
 
-if(@history)
+return(\@history) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetVariableHistory
+{
+	
+=head2 GetVariableHistory
+
+This shall not be used directly. Use L<GetHistory>.
+
+=cut
+
+my ($self, $category, $name) = @_ ;
+
+if(exists $self->{ALIASED_CATEGORIES}{$category})
 	{
-	return(\@history) ;
+	my $aliased = tied(%{ $self->{CATEGORIES}{$category} }) ;
+	my $aliased_history = $aliased->{CONFIG}->GetHistory(NAME => $name) ;
+	
+	if(@{$aliased_history})
+		{
+		return 
+			{
+			"HISTORY FROM ALIASED CATEGORY '$aliased->{CONFIG}{NAME}'" => $aliased_history,
+			TIME => $self->{ALIASED_CATEGORIES}{$category}{TIME_STAMP},
+			} ;
+		}
+	else
+		{
+		return ;
+		}
 	}
 else
 	{
-	return ;
+	if(exists $self->{CATEGORIES}{$category}{$name})
+		{
+		return(@{$self->{CATEGORIES}{$category}{$name}{HISTORY}}) ;
+		}
+	else
+		{
+		return  ;
+		}
 	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetHistoryDump
+{
+
+=head2 GetHistoryDump
+
+  $dump = $config->GetHistoryDump(NAME => 'CC') ;
+  
+  $dump = $config->GetHistoryDump(CATEGORIES_TO_EXTRACT_FROM => ['A', 'B'], NAME => 'CC', DATA_TREEDUMPER_OPTIONS => []) ;
+
+Returns a dump, of the variable history, generated by B<Data::TreeDumper::DumpTree>. 
+
+See L<Data::TreeDumper>.
+
+=cut
+
+my ($self, @options) = @_ ;
+
+if (@options % 2)
+	{
+	$self->{INTERACTION}{DIE}->('Invalid number of argument!') ;
+	}
+
+my %options = @options ;
+
+$self->CheckOptionNames($VALID_OPTIONS, %options) ;
+
+unless(defined $options{FILE})
+	{
+	my ($package, $file_name, $line) = caller() ;
+	
+	$options{FILE} = $file_name ;
+	$options{LINE} = $line ;
+	}
+
+my $location = "$options{FILE}:$options{LINE}" ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
+
+my ($config_name, $config_location) = $self->GetInformation() ;
+my $config_information = "from config '$config_name' created at '$config_location'" ;
+
+my @categories_to_extract_from ;
+if(exists $options{CATEGORIES_TO_EXTRACT_FROM})
+	{
+	@categories_to_extract_from = (CATEGORIES_TO_EXTRACT_FROM => $options{CATEGORIES_TO_EXTRACT_FROM}) ;
+	}
+	
+my @data_treedumper_options ;
+if(exists $options{DATA_TREEDUMPER_OPTIONS})
+	{
+	@data_treedumper_options = @{ $options{DATA_TREEDUMPER_OPTIONS} } ;
+	}
+
+return
+	(
+	DumpTree
+		(
+		$self->GetHistory(NAME => $options{NAME}, @categories_to_extract_from),
+		"History for variable '$options{NAME}' $config_information:",
+		DISPLAY_ADDRESS => 0,
+		@data_treedumper_options
+		) 
+	) ;
 }
 
 #-------------------------------------------------------------------------------
@@ -2273,9 +2873,9 @@ sub GetDump
 =head2 GetDump
 
   $dump = $config->GetDump() ;
-  $dump = $config->GetDump(DATA_TREEDUMPER_OPTIONS) ;
+  $dump = $config->GetDump(@data_treedumper_options) ;
 
-Returns a dump generated by B<Data::TreeDumper::DumpTree>. The arguments are forwarded to the dumper.
+Returns a dump, of the Config::Hierarchical object, generated by B<Data::TreeDumper::DumpTree>. The arguments are forwarded to the dumper.
 
 See L<Data::TreeDumper>.
 
@@ -2358,5 +2958,8 @@ L<http://search.cpan.org/dist/Config-Hierarchical>
 
 =head1 SEE ALSO
 
+L<Config::Hierarchical::Tie::ReadOnly>
+
+L<Config::Hierarchical::Delta>
 
 =cut

@@ -13,20 +13,29 @@ use Test::Warn ;
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'Dump' => 1} ;
+local $Plan = {'Dump and information' => 3} ;
+
+my $file_regex = __FILE__ ; $file_regex = qr/$file_regex/ ;
 
 my $config = new Config::Hierarchical
 				(
+				NAME => 'this config',
+				
 				INITIAL_VALUES  =>
 					[
-					[NAME => 'CC', VALUE => 1],
-					[NAME => 'CC', VALUE => 2],
-					[NAME => 'AS', VALUE => 4],
+					{NAME => 'CC', VALUE => 1},
+					{NAME => 'CC', VALUE => 2},
+					{NAME => 'AS', VALUE => 4},
 					] ,
 				) ;
 
 my $dump = $config->GetDump() ;
 isnt($dump, '', 'dump not empty') ;
+
+my ($name, $location) = $config->GetInformation() ;
+is($name, 'this config') ;
+like($location, $file_regex, 'information reports right file') ;
+
 }
 
 
@@ -39,8 +48,8 @@ my $config = new Config::Hierarchical
 				DEFAULT_CATEGORY => 'A',
 				INITIAL_VALUES  =>
 					[
-					[CATEGORY => 'Z', NAME => 'Z', VALUE => 1],
-					[CATEGORY => 'A', NAME => 'A', VALUE => 2],
+					{CATEGORY => 'Z', NAME => 'Z', VALUE => 1},
+					{CATEGORY => 'A', NAME => 'A', VALUE => 2},
 					] ,
 				) ;
 
@@ -52,7 +61,7 @@ like($dump, qr/CATEGORIES \nZ \nZ/, 'dump category in priority order') ;
 {
 #~ use Data::TreeDumper ;
 
-local $Plan = {'verbose' => 48} ;
+local $Plan = {'verbose' => 55} ;
 
 my $file_regex = __FILE__ ; $file_regex = qr/$file_regex/ ;
 my @messages ;
@@ -62,13 +71,13 @@ my $config = new Config::Hierarchical
 				(
 				NAME            => 'verbose test',
 				VERBOSE         => 1,
-				INITIAL_VALUES  => [[NAME => 'CC', VALUE => 1]],
+				INITIAL_VALUES  => [{NAME => 'CC', VALUE => 1}],
 				INTERACTION     => {INFO => $info},
 				) ;
 
 is(@messages, 2, "Create and Set messages") ;
 like($messages[0], $file_regex, 'verbose reports right file') ;
-like($messages[0], qr/Created Config::Hierarchical/, 'creation message') ;
+like($messages[0], qr/Creating Config::Hierarchical/, 'creation message') ;
 like($messages[1], $file_regex, 'verbose reports right file') ;
 like($messages[1], qr/Setting 'CURRENT::CC' to '1'/, 'Set message') ;
 #~ diag DumpTree(\@messages) ;
@@ -89,10 +98,11 @@ is(@messages, 0, "Dump generates no message") ;
 
 @messages = () ;
 my $hash_ref = $config->GetHashRef() ;
-is(@messages, 2, "GetHashRef generates a message per variable") ;
+is(@messages, 3, "GetHashRef generates a message per variable") ;
 like($messages[0], $file_regex, 'verbose reports right file') ;
-like($messages[0], qr/Getting 'CC'/, 'Get message') ;
-like($messages[1], qr/found in category 'CURRENT'/, 'Get message') ;
+like($messages[0], qr/GetHashRef/, 'GetHashRef message') ;
+like($messages[1], qr/Getting 'CC'/, 'Get message') ;
+like($messages[2], qr/found in category 'CURRENT'/, 'Get message') ;
 #~ diag DumpTree(\@messages) ;
 
 @messages = () ;
@@ -168,7 +178,60 @@ is(@messages, 1, "Exists message") ;
 like($messages[0], $file_regex, 'verbose reports right file') ;
 like($messages[0], qr/Checking Existance/, 'Checking Existance') ;
 #~ diag DumpTree(\@messages) ;
+
+
+@messages = () ;
+my @tuples = $config->GetKeyValueTuples(VERBOSE => 1) ;
+is(@messages, 10, "Exists message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/'GetKeyValueTuples' at/, 'GetKeyValueTuples') ;
+#~ diag DumpTree(\@messages) ;
+#~ diag DumpTree($config) ;
+
+
+@messages = () ;
+my @keys = $config->GetKeys() ;
+is(@messages, 1, "GetKey message") ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/GetKeys/, 'GetKeys') ;
 }
+
+{
+#~ use Data::TreeDumper ;
+
+local $Plan = {'verbose' => 4} ;
+
+my $file_regex = __FILE__ ; $file_regex = qr/$file_regex/ ;
+my @messages ;
+my $info = sub {push @messages, @_} ;
+	
+my $config = new Config::Hierarchical
+				(
+				NAME            => 'config',
+				VERBOSE         => 1,
+				INITIAL_VALUES  => [{NAME => 'CC', VALUE => 1}],
+				INTERACTION     => {INFO => $info},
+				) ;
+
+@messages = () ;
+my $config2 = new Config::Hierarchical
+				(
+				NAME            => 'config 2',
+				VERBOSE         => 1,
+				CATEGORY_NAMES    => ['A', 'B'],
+				DEFAULT_CATEGORY => 'A',
+				INTERACTION     => {INFO => $info},
+				INITIAL_VALUES  => [{CATEGORY => 'A', ALIAS => $config}],
+				) ;
+
+is(@messages, 7, "SetAlias message") or diag DumpTree(\@messages) ;
+like($messages[0], $file_regex, 'verbose reports right file') ;
+like($messages[0], qr/Creating Config::Hierarchical/, 'creation message') ;
+like($messages[1], qr/SetAlias/, 'SetAlias') ;
+
+use Data::TreeDumper ;
+}
+
 
 
 

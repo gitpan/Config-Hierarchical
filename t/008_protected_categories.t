@@ -20,7 +20,7 @@ my $config = new Config::Hierarchical
 			CATEGORY_NAMES => ['<CLI>'],
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
 				],
 			) ;
 			
@@ -36,7 +36,7 @@ my $config = new Config::Hierarchical
 			CATEGORY_NAMES => ['<CLI>'],
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
 				],
 			) ;
 			
@@ -54,7 +54,7 @@ dies_ok
 			CATEGORY_NAMES => ['C<L>I'],
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
 				],
 			) ;
 	} "<> not accepted" ;
@@ -66,7 +66,7 @@ dies_ok
 			CATEGORY_NAMES => ['<C<L>I>'],
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
 				],
 			) ;
 	} "<> not accepted" ;
@@ -78,7 +78,7 @@ dies_ok
 			CATEGORY_NAMES => ['CL>I'],
 			INITIAL_VALUES =>
 				[
-				[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
 				],
 			) ;
 	} "<> not accepted" ;
@@ -95,11 +95,12 @@ warnings_like
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'CLI'    , NAME => 'CC', VALUE => 1,              ],
-				[CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2, OVERRIDE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
-				[CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1],
+				{CATEGORY => 'CLI'    , NAME => 'CC', VALUE => 1},
+				{CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2, OVERRIDE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1},
+				{CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1},
 				] ,
+				
 			INTERACTION            =>
 				{
 				# work around error in Test::Warn
@@ -130,10 +131,10 @@ warnings_like
 			DEFAULT_CATEGORY => 'CURRENT',
 			INITIAL_VALUES   =>
 				[
-				[CATEGORY => 'CLI'    , NAME => 'CC', VALUE => 1,              ],
-				[CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2, OVERRIDE => 1],
-				[CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1],
-				[CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1],
+				{CATEGORY => 'CLI'    , NAME => 'CC', VALUE => 1,              },
+				{CATEGORY => 'PBS'    , NAME => 'CC', VALUE => 2, OVERRIDE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1},
+				{CATEGORY => 'LOCAL'  , NAME => 'CC', VALUE => 4, OVERRIDE => 1},
 				] ,
 			INTERACTION            =>
 				{

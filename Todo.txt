@@ -1,8 +1,51 @@
 
-Config Delta
+check in SVK
+
+log4j support
+	
+use Debug::Mixin
+
+Shall Parents allow override instead for children forcing the override
+	or shall we force an unlock and an override?
+	or shall we add a die if override
+	
+Die if precedence given option
+Die if override option (how does lock work in this case) 
+
+Die if variable is not set when GetConfig is called
+Die if variable not existst in GetConfig
+	both the above could be implemented with a test passed after Get instead for an internal implementation
+	
+EvalString (was called eval config in PBS)
+	does it have to be in config::hierarchical?
+
+Add a cache to get the data quickly, note that it should generate the same warning if any
+
+write a bunch of examples in a cookbook (take them from tests)
+	particularly show the warning errors
+	explain how to inherit from config to config
+	give some use cases
+
+#document history compacter
+
+#add comment, history force lock, override, lock,... to history event
+
+#Config Delta
+
+	in package Config::Hierarchical::Delta
+	
+	this can be used for showing what config have changed before running rules or to show
+	the difference between a node and its package
+	
 	delta between lists in a config object
 
-		$c->
+		$c->Delta
+			(
+			CATEGORIES => [],
+			EXTERNAL_CONFIGS => [], #sense if they are C::H or other type. expect a hash access 
+			CHECK_SUB => sub,
+			DISPLAY_CALLBACK => sub,
+			)
 		
 	delta between objects (with lists)
 		=> can be done in two steps
@@ -13,35 +56,77 @@ Config Delta
 		default callback is a dumper
 			default dumper can also get arguments
 
+	return a diff data structure that can be displayed by any dumper
 
-use Debug::Mixin
+#package Config::Hierarchical::Tie::ReadOnly
+	same as GetHashref but the values are kept in the config object, usufull to save memory when doing EvalString
 
-Dependencies between configuration variables are complex as the dependency is build with Perl
-        can we extract the dependency via B:: call stack and history?
+# GENERATE WARNING for ALIASED categories
 
-Shall Parents allow override instead for children forcing the override
-	or shall we force an unlock and an override?
-	or shall we add a die if override
+#can we override a locked variable => yes, no warnings (except override)
+
+!Add sub to initalize a category in one call. once initialized, it shall not be possible to initialize
+	a category again.
+	=> use INITIAL_VALUES
 	
-Die if precedence given option
-Die if override option (how does lock work in this case) 
-Die if variable unset in GetConfig
-Die if variable not existst in GetConfig
-
-can we override a locked variable => yes, no warnings (except override)
-
-write a bunch of examples in a cookbook (take them from tests)
-	particularly show the warning errors
-	explain how to inherit from config to config
+#Add sub to extract a config for user defined categories. the returned config should be directly usable
+	to initialize another category
 	
+	my $config_1 = new Config::Hierarchical(.....) ;
+	
+	my $config_2 = new Config::Hierarchical
+					(
+					INITIAL_VALUES =>
+						[
+						config_1->GetAllVariableInInitializationFormat
+							(
+							CATEGORY => 'XYZ,
+							LOCK => 1,
+							HISTORY => undef # remove history
+							),
+						
+						[CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,],
+						[CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1],
+						],
+					) ;
+
+
+#It should be possible to implement a category through a reference to another C::H object
+	this is nested configs. one solution is to implement a tied hash interface on top of C:.H
+	for read only nested config, we cuold implement only exists and fetch in the tie. Maybe
+	implementing two tied modules on top of C::H is the cleanest solution
+	
+	
+	my $config_1 = new Config::Hierarchical(.....) ;
+	my $config_2 = new Config::Hierarchical
+					(
+					.....
+					REFERENCE_CONFIG =>
+						[
+							{
+							CATEGORY_NAME => 
+							CONFIGURATION_REFERENCE => $config_1,
+							ALLOWED_VARIABLES => [], 
+							LOCKED_CATEGORY =>
+							HISTORY => ...
+							...
+							},
+						]
+					) ;
+	This is not going to be time effective even if it save a lot of memory
+		=> this decision should be left to the user
+
+	
+#Add sub to lock category, making the category read only
+
 #Add validation
-        can we define a validator for an already existing configuration variable, yes
-        do we inherit validators, between what?
-        Can a validator be used for cross variable dependency? preferably something added externally
-        can we have multiple validators (good)
-        does a new validator check for an already existing value? should
-        Can we use the same mechanism for user validators and C::I validators (IE override ...)
-        are validators per variable or per category? variable
+	can we define a validator for an already existing configuration variable, yes
+	do we inherit validators, between what?
+	Can a validator be used for cross variable dependency? preferably something added externally
+	can we have multiple validators (good)
+	does a new validator check for an already existing value? should
+	Can we use the same mechanism for user validators and C::I validators (IE override ...)
+	are validators per variable or per category? variable
 	remember where validators are added
 
 	We may want to define validators before we create a config
@@ -49,8 +134,8 @@ write a bunch of examples in a cookbook (take them from tests)
 	GetConfig shall NOT return an invalid value if the validator was set after the value
 
 	Set
-	        NAME ...
-	        VALIDATORS => [sub, ...]
+		NAME ...
+		VALIDATORS => [sub, ...]
 
 	VALIDATORS =>
 		[
@@ -137,6 +222,3 @@ write a bunch of examples in a cookbook (take them from tests)
 
 test distribution release manifest ??.
 
-check in SVK
-
-log4j support

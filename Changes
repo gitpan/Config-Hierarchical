@@ -1,4 +1,9 @@
 0.02
+	ADDED: Config:Hierarchical::Tie::ReadOnly
+	ADDED: Config:Hierarchical::Delta
+	
+
+0.02
 	FIXED: removed dependency to Data::TreeDumper in Build.pl
 	CHANGED: precedence given to X::Y'  should be 'X::Y takes precedence'
 	CHANGED: override variable is always override even if the OVERRIDE parameter is not passed
@@ -11,3 +16,6 @@
 	ADDED:; COMMENT
 	FIXED: status was not added to history when locking is done through 'set'. 
 	ADDED: VALIDATOR and AddValidator
+
+0.03
+	ADDED: category locking

@@ -17,18 +17,29 @@ add_stopwords
 		CheckHigherPriorityCategories
 		CheckLowerPriorityCategories
 		CheckAndSetVariable
+		CheckVariableInCategory
 		CreateCustomGetFunctions
 		CheckOptionNames
 		GetDump
 		GetHashRef
 		GetHistory
+		GetHistoryDump
+		GetInformation
+		GetVariableHistory
 		GetInheritable
+		GetKeys
+		GetKeyValueTuples
 		GetMultiple
+		IsCategoryLocked
 		IsLocked
+		LockCategories
 		OverrideVariable
+		SetAlias
 		SetDisableSilentOptions
-		SetMultiple
 		SetDisplayExplicitCategoryWarningOption
+		SetMultiple
+		SetupCategories
+		UnlockCategories
 		
 		VALIDATORS
 		PositiveValueValidator
@@ -41,6 +52,16 @@ add_stopwords
 		nadim
 		Khemir
 		khemir
+		
+		FIRSTKEY
+		NEXTKEY
+		TIEHASH
+		
+		DumpConfigHierarchicalDelta
+		GetConfigDelta
+		GetConfigHierarchicalDelta
+		lhs
+		rhs
 		)
 	) ;
 	
