@@ -368,22 +368,22 @@ $config_2->Set(FILE => 'file', LINE => 'line', CATEGORY => 'A', NAME => 'XYZ', V
 my $expected_dump = <<EOD ;
 History for variable 'CC1' from config 'config 2' created at 'file:line':
 |- 0 
-|  |- HISTORY FROM ALIASED CATEGORY 'config 1' 
+|  |- HISTORY FROM 'B' ALIASED TO 'config 1' 
 |  |  |- 0 
-|  |  |  |- HISTORY FROM ALIASED CATEGORY 'config 0' 
+|  |  |  |- HISTORY FROM 'B' ALIASED TO 'config 0' 
 |  |  |  |  `- 0 
-|  |  |  |     |- EVENT = value = '1'. CREATE AND SET, category = 'CURRENT' at 'file:line', status = OK. 
+|  |  |  |     |- EVENT = CREATE AND SET. value = '1', category = 'CURRENT' at 'file:line', status = OK. 
 |  |  |  |     `- TIME = 0 
 |  |  |  `- TIME = 2 
 |  |  |- 1 
-|  |  |  |- EVENT = value = '1'. CREATE AND SET, category = 'A' at 'file:line', status = OK. 
+|  |  |  |- EVENT = CREATE AND SET. value = '1', category = 'A' at 'file:line', status = OK. 
 |  |  |  `- TIME = 3 
 |  |  `- 2 
-|  |     |- EVENT = value = '1.1'. SET, category = 'A' at 'file:line', status = OK. 
+|  |     |- EVENT = SET. value = '1.1', category = 'A' at 'file:line', status = OK. 
 |  |     `- TIME = 6 
 |  `- TIME = 3 
 `- 1 
-   |- EVENT = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'file:line', status = OK. 
+   |- EVENT = CREATE AND SET. value = 'A', OVERRIDE, category = 'A' at 'file:line', status = OK. 
    `- TIME = 4 
 EOD
 
@@ -393,7 +393,7 @@ is($dump, $expected_dump, 'history dump') ;
 $expected_dump = <<EOD ;
 History for variable 'XYZ' from config 'config 2' created at 'file:line':
 `- 0 
-   |- EVENT = value = 'xyz'. CREATE AND SET, category = 'A' at 'file:line', status = OK. 
+   |- EVENT = CREATE AND SET. value = 'xyz', category = 'A' at 'file:line', status = OK. 
    `- TIME = 5 
 EOD
 
@@ -413,18 +413,18 @@ throws_ok
 $expected_dump = <<EOD ;
 History for variable 'CC1' from config 'config 2' created at 'file:line':
 `- 0 
-   |- HISTORY FROM ALIASED CATEGORY 'config 1' 
+   |- HISTORY FROM 'B' ALIASED TO 'config 1' 
    |  |- 0 
-   |  |  |- HISTORY FROM ALIASED CATEGORY 'config 0' 
+   |  |  |- HISTORY FROM 'B' ALIASED TO 'config 0' 
    |  |  |  `- 0 
-   |  |  |     |- EVENT = 'value = '1'. CREATE AND SET, category = 'CURRENT' at 'file:line', status = OK.' 
+   |  |  |     |- EVENT = 'CREATE AND SET. value = '1', category = 'CURRENT' at 'file:line', status = OK.' 
    |  |  |     `- TIME = '0' 
    |  |  `- TIME = '2' 
    |  |- 1 
-   |  |  |- EVENT = 'value = '1'. CREATE AND SET, category = 'A' at 'file:line', status = OK.' 
+   |  |  |- EVENT = 'CREATE AND SET. value = '1', category = 'A' at 'file:line', status = OK.' 
    |  |  `- TIME = '3' 
    |  `- 2 
-   |     |- EVENT = 'value = '1.1'. SET, category = 'A' at 'file:line', status = OK.' 
+   |     |- EVENT = 'SET. value = '1.1', category = 'A' at 'file:line', status = OK.' 
    |     `- TIME = '6' 
    `- TIME = '3' 
 EOD

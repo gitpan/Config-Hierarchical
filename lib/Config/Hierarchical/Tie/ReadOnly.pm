@@ -43,11 +43,11 @@ Config::Hierarchical::Tie::ReadOnly - Access Hierarchical configuration containe
 				
 				INITIAL_VALUES  =>
 					[
-					[CATEGORY => 'A', NAME => 'CC1', VALUE => '1'],
-					[CATEGORY => 'B', NAME => 'CC2', VALUE => '2'],
-					[CATEGORY => 'A', NAME => 'CC3', VALUE => '3'],
-					[CATEGORY => 'B', NAME => 'CC4', VALUE => '4'],
-					[CATEGORY => 'A', NAME => 'CC5', VALUE => '5'],
+					{CATEGORY => 'A', NAME => 'CC1', VALUE => '1'},
+					{CATEGORY => 'B', NAME => 'CC2', VALUE => '2'},
+					{CATEGORY => 'A', NAME => 'CC3', VALUE => '3'},
+					{CATEGORY => 'B', NAME => 'CC4', VALUE => '4'},
+					{CATEGORY => 'A', NAME => 'CC5', VALUE => '5'},
 					] ,
 				) ;
 	
@@ -90,7 +90,7 @@ The method invoked by the command tie %hash, class name. Associates a new hash i
 
 unless('Config::Hierarchical' eq ref $arguments[0])
 	{
-	die "Argument must be a 'Config::Hierarchical' object!\n" ;
+	croak "Argument must be a 'Config::Hierarchical' object!\n" ;
 	}
 	
 my $self = {CONFIG => $arguments[0]} ;
@@ -112,7 +112,7 @@ Dies as this tie is read only.
 =cut
 
 my (undef, $filename, $line) = caller() ;
-die "This hash is read only at '$filename:$line'!\n" ;
+$this->{CONFIG}{INTERACTION}{DIE}->("This hash is read only at '$filename:$line'!\n") ;
 }
 
 #-------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ Dies as this tie is read only.
 =cut
 
 my (undef, $filename, $line) = caller() ;
-die "This hash is read only at '$filename:$line'!\n" ;
+$this->{CONFIG}{INTERACTION}{DIE}->("This hash is read only at '$filename:$line'!\n") ;
 }
 
 #-------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ Dies as this tie is read only.
 =cut
 
 my (undef, $filename, $line) = caller() ;
-die "This hash is read only at '$filename:$line'!\n" ;
+$this->{CONFIG}{INTERACTION}{DIE}->("This hash is read only at '$filename:$line'!\n") ;
 }
 
 #-------------------------------------------------------------------------------

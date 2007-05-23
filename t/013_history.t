@@ -80,11 +80,11 @@ my $history = $config->GetHistory(CATEGORIES_TO_EXTRACT_FROM => ['CURRENT'], NAM
 my $reference_history =
 	[
 		{
-		EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		EVENT => "CREATE AND SET. value = '1', category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
 		TIME => 0,
 		},
 		{
-		EVENT => "value = '2'. SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		EVENT => "SET. value = '2', category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
 		TIME => 1,
 		},
 	] ;
@@ -170,26 +170,26 @@ warnings_like
 my $reference_history = 
 	[ 
 	{ 
-	EVENT => "value = '3'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 't/013_history.t:0', status = OK." ,
+	EVENT => "CREATE, SET HISTORY AND SET. value = '3', category = 'PARENT' at 't/013_history.t:0', status = OK." ,
 	HISTORY =>
 		[
 		{
-		EVENT => "value = '2'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 't/013_history.t:0', status = OK." ,
+		EVENT => "CREATE, SET HISTORY AND SET. value = '2', category = 'PARENT' at 't/013_history.t:0', status = OK." ,
 		HISTORY =>
 			[
 			{
-			EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at 't/013_history.t:0', status = OK.",
+			EVENT => "CREATE AND SET. value = '1', category = 'CURRENT' at 't/013_history.t:0', status = OK.",
 			TIME => 0,
 			},
 			{
-			EVENT => "value = '2'. SET, category = 'CURRENT' at 't/013_history.t:0', status = OK.",
+			EVENT => "SET. value = '2', category = 'CURRENT' at 't/013_history.t:0', status = OK.",
 			TIME => 1,
 			},
 			],
 		TIME => 0,
 		},
 		{
-		EVENT => "value = '3'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
+		EVENT => "CREATE AND SET. value = '3', OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
 		TIME => 1
 		},
 		],
@@ -197,13 +197,13 @@ my $reference_history =
 	},
 	
 	{
-	EVENT => "value = '4'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK." ,
+	EVENT => "CREATE AND SET. value = '4', OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK." ,
 	TIME => 1,
 	},
 	
 	{
 	COMMENT => 'Set it to 5',
-	EVENT => "value = '5'. SET, OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
+	EVENT => "SET. value = '5', OVERRIDE, category = 'CURRENT' at 't/013_history.t:0', status = Overriding 'PARENT::CC' (existed, value was different).OK.",
 	TIME => 2,
 	},
 	
@@ -252,7 +252,7 @@ warnings_like
 	is
 		(
 		$history->[0]{EVENT},
-		"value = 'OVERRIDE'. CREATE AND SET, OVERRIDE, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		"CREATE AND SET. value = 'OVERRIDE', OVERRIDE, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
 		'event is complete'
 		);
 		
@@ -261,7 +261,7 @@ warnings_like
 	is
 		(
 		$history->[0]{EVENT},
-		"value = 'LOCK'. CREATE AND SET, LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		"CREATE AND SET. value = 'LOCK', LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
 		'event is complete'
 		);
 		
@@ -269,7 +269,7 @@ warnings_like
 	is
 		(
 		$history->[0]{EVENT},
-		"value = 'OVERRIDE_AND_LOCK'. CREATE AND SET, OVERRIDE, LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		"CREATE AND SET. value = 'OVERRIDE_AND_LOCK', OVERRIDE, LOCK(1), category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
 		'event is complete'
 		);
 		
@@ -277,7 +277,7 @@ warnings_like
 	is
 		(
 		$history->[0]{EVENT},
-		"value = 'FORCE_LOCK'. CREATE AND SET, FORCE_LOCK, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
+		"CREATE AND SET. value = 'FORCE_LOCK', FORCE_LOCK, category = 'A' at '" . __FILE__ . ':' . $creation_line . "', status = OK.", 
 		'event is complete'
 		);
 	}
@@ -399,19 +399,19 @@ $history = $config->GetHistory(NAME => 'CC') ;
 my $reference_history =
 	[
  		{
-		EVENT => "value = '1'. CREATE AND SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		EVENT => "CREATE AND SET. value = '1', category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
 		TIME => 0,
 		},
 		{
-		EVENT => "value = '2'. SET, category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
+		EVENT => "SET. value = '2', category = 'CURRENT' at '" . __FILE__ . ':' . $creation_line . "', status = OK.",
 		TIME => 1,
 		},
 		{
-		EVENT => "LOCK, category = 'CURRENT' at '" . __FILE__ . ':' . $lock_line . "', status = Lock: OK.",
+		EVENT => "LOCK. category = 'CURRENT' at '" . __FILE__ . ':' . $lock_line . "', status = Lock: OK.",
 		TIME => 3,
 		},
 		{
-		EVENT => "UNLOCK, category = 'CURRENT' at '" . __FILE__ . ':' . $unlock_line . "', status = Unlock: OK.",
+		EVENT => "UNLOCK. category = 'CURRENT' at '" . __FILE__ . ':' . $unlock_line . "', status = Unlock: OK.",
 		TIME => 4,
 		},
 	] ;

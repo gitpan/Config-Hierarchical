@@ -8,6 +8,7 @@ README
 Todo.txt
 
 lib/Config/Hierarchical.pm
+lib/Config/Cookbook.pod
 lib/Config/Hierarchical/Tie/ReadOnly.pm
 lib/Config/Hierarchical/Delta.pm
 

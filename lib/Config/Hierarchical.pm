@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.03;
+$VERSION     = 0.04;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -107,7 +107,7 @@ Readonly my $VALID_OPTIONS =>
 				[
 				{
 				CATEGORY => 'PBS',
-				ALIASES  => $pbs_config,
+				ALIAS    => $pbs_config,
 				HISTORY  => ....,
 				COMMENT  => ....,
 				},
@@ -361,7 +361,7 @@ Lets you initialize the Config::Hierarchical object. Each entry will be passed t
 				[
 				{ # aliased category
 				CATEGORY => 'PBS',
-				ALIASES  => $pbs_config,
+				ALIAS    => $pbs_config,
 				HISTORY  => ....,
 				COMMENT  => ....,
 				},
@@ -1510,7 +1510,7 @@ if(exists $options->{LOCK})
 
 my $override = exists $options->{OVERRIDE} ? 'OVERRIDE, ' : $EMPTY_STRING ;
 
-my $history = "value = '$options->{VALUE}'. $action, ${override}${force_lock}${lock}category = '$options->{CATEGORY}' at '$options->{FILE}:$options->{LINE}', status = $set_status" ;
+my $history = "$action. value = '$options->{VALUE}', ${override}${force_lock}${lock}category = '$options->{CATEGORY}' at '$options->{FILE}:$options->{LINE}', status = $set_status" ;
 
 my $history_data = {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
 $history_data->{HISTORY} = $options->{HISTORY} if exists $options->{HISTORY} ;
@@ -2245,7 +2245,7 @@ if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
 	
 	$config_variable->{LOCKED} = $location ;
 	
-	my $history = "LOCK, category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Lock: OK." ;
+	my $history = "LOCK. category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Lock: OK." ;
 	push @{$config_variable->{HISTORY}}, {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
 
 	$self->{TIME_STAMP}++ ;
@@ -2332,7 +2332,7 @@ if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
 	
 	delete $config_variable->{LOCKED} ;
 	
-	my $history = "UNLOCK, category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Unlock: OK." ;
+	my $history = "UNLOCK. category = '$options{CATEGORY}' at '$options{FILE}:$options{LINE}', status = Unlock: OK." ;
 	push @{$config_variable->{HISTORY}}, {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
 	
 	$self->{TIME_STAMP}++ ;
@@ -2616,7 +2616,7 @@ history of the aliased config.
 						[
 						{
 						CATEGORY => 'PBS',
-						ALIASES  => $pbs_config,
+						ALIAS    => $pbs_config,
 						HISTORY  => ....,
 						COMMENT  => ....,
 						},
@@ -2658,7 +2658,7 @@ Given the following Data::TreeDumper filter
 	sub Compact
 	{
 	my ($s, $level, $path, $keys, $setup, $arg) = @_ ;
-
+	
 	if('ARRAY' eq ref $s)
 		{
 		my ($index, @replacement, @keys) = (0) ;
@@ -2696,6 +2696,8 @@ the output above becomes:
 	|  `- 2 = value = '1.1'. SET, category = 'A' at 'nadim.pl:50', status = OK.
 	|- 1 = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'nadim.pl:64', status = OK.
 	`- 2 = value = 'A2'. SET, OVERRIDE, category = 'A' at 'nadim.pl:65', status = OK.
+
+Note that comments are also removed.
 
 =cut
 
@@ -2776,7 +2778,7 @@ if(exists $self->{ALIASED_CATEGORIES}{$category})
 		{
 		return 
 			{
-			"HISTORY FROM ALIASED CATEGORY '$aliased->{CONFIG}{NAME}'" => $aliased_history,
+			"HISTORY FROM '$category' ALIASED TO '$aliased->{CONFIG}{NAME}'" => $aliased_history,
 			TIME => $self->{ALIASED_CATEGORIES}{$category}{TIME_STAMP},
 			} ;
 		}
