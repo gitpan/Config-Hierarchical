@@ -1,3 +1,8 @@
+0.05
+	REMOVED: Cookbook based on POD::Tested
+	ADDED: Cookbook based on Test::Cookbook
+	CHANGED: documentation
+	
 0.04
 	ADDED: Cookbook based on POD::Tested
 

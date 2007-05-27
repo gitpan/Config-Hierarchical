@@ -292,20 +292,7 @@ sub Get_NoIdentical_Filter
 
 =head2 Get_NoIdentical_Filter
 
-	print  DumpConfigHierarchicalDelta($config_2, $config_0, Get_NoIdentical_Filter()) ;
-
-Gives:
-
-	my $expected_dump = <<EOD ;
-	Delta between 'config 2' and 'config 0'':
-	|- different 
-	|  `- CC1 
-	|     |- config 0 = 1 
-	|     `- config 2 = A 
-	`- in 'config 2' only 
-	   |- CC3 = 3 
-	   `- XYZ = xyz 
-	EOD
+Dumping a config delta with:
 
 	print  DumpConfigHierarchicalDelta($config_2, $config_0) ;	
 
@@ -323,6 +310,23 @@ Gives:
 	   |- CC3 = 3 
 	   `- XYZ = xyz 
   
+
+if you do not want to display the configuration variables that are identical, use:
+
+	print  DumpConfigHierarchicalDelta($config_2, $config_0, Get_NoIdentical_Filter()) ;
+
+which gives:
+
+	my $expected_dump = <<EOD ;
+	Delta between 'config 2' and 'config 0'':
+	|- different 
+	|  `- CC1 
+	|     |- config 0 = 1 
+	|     `- config 2 = A 
+	`- in 'config 2' only 
+	   |- CC3 = 3 
+	   `- XYZ = xyz 
+	EOD
 
 Returns a L<Data::TreeDumper> filter you can use to remove the 'identical' element from the delta hash.
 

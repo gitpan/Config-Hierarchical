@@ -1,10 +1,12 @@
 
+
+?? Remove debugging. Filter it out?
+	use Debug::Mixin instead
+
 check in SVK
 
 log4j support
 	
-use Debug::Mixin
-
 Shall Parents allow override instead for children forcing the override
 	or shall we force an unlock and an override?
 	or shall we add a die if override
@@ -21,10 +23,36 @@ EvalString (was called eval config in PBS)
 
 Add a cache to get the data quickly, note that it should generate the same warning if any
 
-write a bunch of examples in a cookbook (take them from tests)
+# write a bunch of examples in a cookbook (take them from tests)
 	particularly show the warning errors
 	explain how to inherit from config to config
 	give some use cases
+
+# Can we set a lock to 0 without force lock?
+	=> no
+	
+#Options/CATEGORIES_TO_EXTRACT_FROM put the warning info on a single
+line. Same in GetHashRef.
+
+#Error in GetCategories example
+
+# History output has changed the action is before the value now
+
+#Disable silent ...
+        C::H will display warnings
+
+#Missing blank line before FILE and LINE
+
+#Replace 'You can override the aliased category variables.' by you can
+STILL
+
+#Options/ history: remove comment about how it could have been done
+
+
+#GetMultiple: better variable names
+
+
+#Delta: no identical filter example is weird
 
 #document history compacter
 

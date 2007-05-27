@@ -1,5 +1,5 @@
 
-# this should be processed by POD::Tested first
+use Test::Cookbook ;
 
 =head1 Config::Hierarchical cookbook
 

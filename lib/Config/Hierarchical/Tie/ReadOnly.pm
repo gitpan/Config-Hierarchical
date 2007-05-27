@@ -1,8 +1,6 @@
 
 package Config::Hierarchical::Tie::ReadOnly ;
 
-#~ use base Exporter ;
-
 use strict;
 use warnings ;
 
@@ -102,7 +100,8 @@ return($self) ;
 #-------------------------------------------------------------------------------
 
 sub STORE
-{
+{ ## no critic (RequireFinalReturn)
+	
 my ($this, $key, $value) = @_ ;
 
 =head2 STORE
@@ -187,7 +186,7 @@ return($this->{CONFIG}->Exists(NAME => $key)) ;
 #-------------------------------------------------------------------------------
 
 sub DELETE 
-{
+{ ## no critic (RequireFinalReturn)
 
 my ($this, $key) =  @_ ;
 
@@ -204,7 +203,7 @@ $this->{CONFIG}{INTERACTION}{DIE}->("This hash is read only at '$filename:$line'
 #-------------------------------------------------------------------------------
 
 sub CLEAR 
-{
+{ ## no critic (RequireFinalReturn)
 
 my ($this) = @_ ;
 

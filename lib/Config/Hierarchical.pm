@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.04;
+$VERSION     = 0.05;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -205,6 +205,8 @@ generally don't help much when variables are overridden. it's also difficult to 
 
 This module provides the necessary functionality to handle most of the cases needed in a modern build system.
 
+(Test t/099_cookbook.t is also a cookbook you can generate with POD::Tested)
+
 =head1 SUBROUTINES/METHODS
 
 =cut
@@ -263,8 +265,8 @@ an error will be generated.
 
   my $config = new Config::Hierarchical(NAME => 'some_namespace', DISABLE_SILENT_OPTIONS => 1) ;
 
-When this option is set, B<SILENT_OVERRIDE> and B<SILENT_NOT_EXISTS> will be ignored and a
-warning will be displayed.
+When this option is set, B<SILENT_OVERRIDE> and B<SILENT_NOT_EXISTS> will be ignored and
+B<Config::Hierarchical> will display a warning.
 
 =item * GET_CATEGORIES 
 
@@ -273,9 +275,11 @@ list and in a specific order.
 
   my $config = new Config::Hierarchical
 			(
+			CATEGORY_NAMES   => ['CLI', '<PBS>', 'PARENT', 'CURRENT', 'LOCAL'],
+			
 			GET_CATEGORIES =>
 				{
-				Inheritable => ['CLI', '<PBS>', 'PARENT', 'LOCAL', 'CURRENT'],	
+				Inheritable => ['CLI', 'PBS', 'PARENT', 'CURRENT'],
 				}
 			...
 			) ;
@@ -284,7 +288,7 @@ list and in a specific order.
   my $hash_ref = $config->GetInheritableHashRef() ;
   
 
-In the example above, the B<LOCAL> variables will not be returned by B<GetInheritable>.
+In the example above, the B<LOCAL> category will not be used by B<GetInheritable>.
 
 =item * WARN_FOR_EXPLICIT_CATEGORY
 
@@ -344,6 +348,7 @@ The functions default to:
 
 =back
 
+
 =item * FILE and LINE
 
 These will be used in the information message and the history information if set. If not set, the values
@@ -379,7 +384,7 @@ See L<Set> for options to B<INITIAL_VALUES>.
 B<Aliased categories> allow you to use a category to refer to  an existing Config::Hierarchical object. 
 The referenced object is read only. This is because multiple configurations might alias to the same Config::Hierarchical object.
 
-You can override the aliased category variables.
+Variables from aliased category can also be overridden.
 
 =item * LOCKED_CATEGORIES
 
@@ -1018,7 +1023,7 @@ B<NAME> and B<VALUE> must be passed as arguments.
 =item * HISTORY
 
 The argument passed is kept in the configuration variable. You can pass any scalar variable; B<Config::Hierarchical> will
-not manipulate this information. This could be done automatically but was kept manual for efficiency and control reasons.
+not manipulate this information.
 
 See L<GetHistory>.
 
@@ -1612,11 +1617,11 @@ Setting this option will disable the warning generated when the variable doesn't
 
 =item *  CATEGORIES_TO_EXTRACT_FROM
 
-if set, B<Get> will only search in the specified categories.
+If set, B<Get> will only search in the specified categories.
 
 =item *  GET_CATEGORY
 
-if this option is set, B<Get> will return  the value _and_ the category it it comes from.
+If this option is set, B<Get> will return  the value _and_ the category it it comes from.
 
 =back
 
@@ -1891,14 +1896,7 @@ if set, B<GetKeyValueTuples> will only search in the specified categories.
 
 =back
 
-
-A warning will be generated if:
-
-=over 2
-
-=item it is called in void context
-
-=back
+A warning will be generated if I<GetKeys> is called in void context.
 
 =cut
 
@@ -1986,7 +1984,7 @@ contained in the object. This can be useful when you you create config objects f
 
 =item *  CATEGORIES_TO_EXTRACT_FROM
 
-if set, B<GetKeyValueTuples> will only search in the specified categories.
+If set, B<GetKeyValueTuples> will only search in the specified categories.
 
 =back
 
@@ -2546,10 +2544,10 @@ Would print as:
 
 	'CC' = 'override value' from category 'CURRENT':
 	|- 0 
-	|  |- EVENT = value = 'parent'. CREATE AND SET, category = 'PARENT' at 'nadim2.pl:21', status = OK. 
+	|  |- EVENT = . CREATE AND SET. value = 'parent', category = 'PARENT' at 'nadim2.pl:21', status = OK. 
 	|  `- TIME = 0 
 	`- 1 
-	   |- EVENT = value = 'override value'. CREATE AND SET, OVERRIDE, category = 'CURRENT' at 'nadim2.pl:34', status =
+	   |- EVENT = value = CREATE AND SET, OVERRIDE. 'override value', category = 'CURRENT' at 'nadim2.pl:34', status =
 	   |  Overriding 'PARENT::CC' (existed, value was different).OK. 
 	   `- TIME = 1 
 
@@ -2564,7 +2562,7 @@ Would print as:
 
 	'CC' = 'parent' from category 'PARENT':
 	`- 0 
-	   |- EVENT = value = 'parent'. CREATE AND SET, category = 'PARENT' at 'nadim2.pl:21', status = OK. 
+	   |- EVENT = value = CREATE AND SET. 'parent', category = 'PARENT' at 'nadim2.pl:21', status = OK. 
 	   `- TIME = 0 
 
 =head3 Explicit history and comments
@@ -2597,7 +2595,7 @@ Would print as:
 	'CC' = '3' from category 'PARENT':
 	|- 0
 	|  |- COMMENT = history and value from config 2
-	|  |- EVENT = value = '3'. CREATE, SET HISTORY AND SET, category = 'PARENT' at 'history.pl:56', status = OK.
+	|  |- EVENT = CREATE, SET HISTORY AND SET. value = '3', category = 'PARENT' at 'history.pl:56', status = OK.
 	|  |- HISTORY
 	|  |  |- 0
 	...
@@ -2634,21 +2632,21 @@ Would print as:
 	|  |  |- 0
 	|  |  |  |- HISTORY FROM ALIASED CATEGORY 'config 0'
 	|  |  |  |  `- 0
-	|  |  |  |     |- EVENT = value = '1'. CREATE AND SET, category = 'CURRENT' at 'nadim.pl:21', status = OK.
+	|  |  |  |     |- EVENT = CREATE AND SET. value = '1', category = 'CURRENT' at 'nadim.pl:21', status = OK.
 	|  |  |  |     `- TIME = 0
 	|  |  |  `- TIME = 2
 	|  |  |- 1
-	|  |  |  |- EVENT = value = '1'. CREATE AND SET, category = 'A' at 'nadim.pl:33', status = OK.
+	|  |  |  |- EVENT = CREATE AND SET. value = '1', category = 'A' at 'nadim.pl:33', status = OK.
 	|  |  |  `- TIME = 3
 	|  |  `- 2
-	|  |     |- EVENT = value = '1.1'. SET, category = 'A' at 'nadim.pl:50', status = OK.
+	|  |     |- EVENT = Set. value = '1.1', category = 'A' at 'nadim.pl:50', status = OK.
 	|  |     `- TIME = 6
 	|  `- TIME = 3
 	|- 1
-	|  |- EVENT = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'nadim.pl:64', status = OK.
+	|  |- EVENT = CREATE AND SET, OVERRIDE. value = 'A', category = 'A' at 'nadim.pl:64', status = OK.
 	|  `- TIME = 4
 	`- 2
-	   |- EVENT = value = 'A2'. SET, OVERRIDE, category = 'A' at 'nadim.pl:65', status = OK.
+	   |- EVENT = SET, OVERRIDE. value = 'A2', category = 'A' at 'nadim.pl:65', status = OK.
 	   `- TIME = 5
 
 =head4 Compact display
@@ -2686,16 +2684,16 @@ Given the following Data::TreeDumper filter
 	
 	print DumpTree $config_2->GetHistory( NAME => 'CC1'), 'CC1', DISPLAY_ADDRESS => 0, FILTER => \&Compact ;
 
-the output above becomes:
+the above output  becomes:
 
 	CC1
 	|- 0 = HISTORY FROM ALIASED CATEGORY 'config 1'
 	|  |- 0 = HISTORY FROM ALIASED CATEGORY 'config 0'
-	|  |  `- 0 = value = '1'. CREATE AND SET, category = 'CURRENT' at 'nadim.pl:21', status = OK.
-	|  |- 1 = value = '1'. CREATE AND SET, category = 'A' at 'nadim.pl:33', status = OK.
-	|  `- 2 = value = '1.1'. SET, category = 'A' at 'nadim.pl:50', status = OK.
-	|- 1 = value = 'A'. CREATE AND SET, OVERRIDE, category = 'A' at 'nadim.pl:64', status = OK.
-	`- 2 = value = 'A2'. SET, OVERRIDE, category = 'A' at 'nadim.pl:65', status = OK.
+	|  |  `- 0 = CREATE AND SET. value = '1', category = 'CURRENT' at 'nadim.pl:21', status = OK.
+	|  |- 1 = CREATE AND SET. value =  '1', category = 'A' at 'nadim.pl:33', status = OK.
+	|  `- 2 = SET. value = '1.1', category = 'A' at 'nadim.pl:50', status = OK.
+	|- 1 = CREATE AND SET, OVERRIDE. value = 'A', category = 'A' at 'nadim.pl:64', status = OK.
+	`- 2 = SET, OVERRIDE. value = 'A2', category = 'A' at 'nadim.pl:65', status = OK.
 
 Note that comments are also removed.
 

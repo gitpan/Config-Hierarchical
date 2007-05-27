@@ -8,7 +8,6 @@ README
 Todo.txt
 
 lib/Config/Hierarchical.pm
-lib/Config/Cookbook.pod
 lib/Config/Hierarchical/Tie/ReadOnly.pm
 lib/Config/Hierarchical/Delta.pm
 
@@ -34,5 +33,6 @@ t/016_keys.t
 t/017_aliased_categories.t
 t/051_tie_readonly.t
 t/061_delta.t
+t/099_Cookbook.t
 
 t/perlcriticrc
