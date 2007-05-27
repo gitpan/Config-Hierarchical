@@ -366,6 +366,20 @@ my $config = new Config::Hierarchical
 			{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2},
 			] ,
 		) ;
-	
+
+had_no_warnings() ;
+}
+
+{
+local $Plan = {'coverage test' => 1} ;
+
+my $config = new Config::Hierarchical
+		(
+		CATEGORY_NAMES   => [ 'PBS', 'CURRENT'],
+		DEFAULT_CATEGORY => 'CURRENT',
+		) ;
+
+$config->Set(NAME => 'CC', VALUE => undef) ;
+
 had_no_warnings() ;
 }

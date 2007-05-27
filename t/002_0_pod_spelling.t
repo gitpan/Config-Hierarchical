@@ -20,6 +20,7 @@ add_stopwords
 		CheckVariableInCategory
 		CreateCustomGetFunctions
 		CheckOptionNames
+		GetAttribute
 		GetDump
 		GetHashRef
 		GetHistory
@@ -35,6 +36,7 @@ add_stopwords
 		LockCategories
 		OverrideVariable
 		SetAlias
+		SetAttribute
 		SetDisableSilentOptions
 		SetDisplayExplicitCategoryWarningOption
 		SetMultiple

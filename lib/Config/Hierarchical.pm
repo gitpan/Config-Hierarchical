@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.05;
+$VERSION     = 0.06;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -30,7 +30,7 @@ Readonly my $EMPTY_STRING => q{} ;
 Readonly my $VALID_OPTIONS =>
 	{ 
 	map{$_ => 1}
-		qw( NAME VALUE HISTORY
+		qw( NAME VALUE HISTORY ATTRIBUTE
 			COMMENT
 			CATEGORY CATEGORIES_TO_EXTRACT_FROM 
 			GET_CATEGORY WARN_FOR_EXPLICIT_CATEGORY
@@ -1035,6 +1035,10 @@ The comment will be added to the variable history.
 
 The name of the category where the variable resides. If no B<CATEGORY> is given, the default category is used.
 
+=item * ATTRIBUTE
+
+Set the configuration variable's attribute to the passed argument.  See <SetAttribute>.
+
 =item * VALIDATORS
 
 Extra validators that will only be used during this call to B<Set>.
@@ -1126,7 +1130,9 @@ else
 
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
 $self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless defined $options{VALUE} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless exists $options{VALUE} ;
+
+my $value_to_display = defined $options{VALUE} ? "'$options{VALUE}'" : 'undef' ;
 
 if(exists $self->{ALIASED_CATEGORIES}{$options{CATEGORY}})
 	{
@@ -1136,7 +1142,7 @@ if(exists $self->{ALIASED_CATEGORIES}{$options{CATEGORY}})
 # inform of action if option set
 if($self->{VERBOSE})
 	{
-	$self->{INTERACTION}{INFO}->("$self->{NAME}: Setting '$options{CATEGORY}::$options{NAME}' to '$options{VALUE}' at '$location'.\n") ;
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: Setting '$options{CATEGORY}::$options{NAME}' to $value_to_display at '$location'.\n") ;
 	}
 
 # run debug hook if any
@@ -1144,7 +1150,7 @@ if(defined $self->{INTERACTION}{DEBUG})
 	{
 	$self->{INTERACTION}{DEBUG}->
 		(
-		"Setting '$options{CATEGORY}::$options{NAME}' to '$options{VALUE}' at '$location'.",
+		"Setting '$options{CATEGORY}::$options{NAME}' to $value_to_display at '$location'.",
 		$self,
 		\%options,
 		) ;
@@ -1420,7 +1426,7 @@ return($set_status, $warnings) ;
 #-------------------------------------------------------------------------------
 
 sub CheckAndSetVariable
-{
+{ ## no critic (ProhibitExcessComplexity)
 
 =head2 CheckAndSetVariable
 
@@ -1443,12 +1449,17 @@ unless($config_variable_exists)
 	
 	$config_variable = $self->{CATEGORIES}{$options->{CATEGORY}}{$options->{NAME}} = {} ;
 
-	$action =  exists $options->{HISTORY} ? 'CREATE, SET HISTORY AND SET' : 'CREATE AND SET' ;
+	$action .=  'CREATE' ;
+	$action .=  exists $options->{HISTORY} ? ', SET HISTORY' : $EMPTY_STRING ;
+	$action .=  exists $options->{ATTRIBUTE} ? ', SET ATTRIBUTE' : $EMPTY_STRING ;
+	$action .= ' AND SET' ;
+	
 	$set_status .= 'OK.' ;
 	}
 else
 	{
 	$action = 'SET' ;
+	$action .=  exists $options->{ATTRIBUTE} ? ', SET ATTRIBUTE' : $EMPTY_STRING ;
 
 	if(exists $options->{HISTORY})
 		{
@@ -1492,6 +1503,7 @@ else
 
 $config_variable->{VALUE} = $options->{VALUE} ;
 $config_variable->{OVERRIDE} = $location if $options->{OVERRIDE} ;
+$config_variable->{ATTRIBUTE} = $options->{ATTRIBUTE} if $options->{ATTRIBUTE} ;
 
 #~ set lock state
 my $lock = $EMPTY_STRING ;
@@ -1515,7 +1527,8 @@ if(exists $options->{LOCK})
 
 my $override = exists $options->{OVERRIDE} ? 'OVERRIDE, ' : $EMPTY_STRING ;
 
-my $history = "$action. value = '$options->{VALUE}', ${override}${force_lock}${lock}category = '$options->{CATEGORY}' at '$options->{FILE}:$options->{LINE}', status = $set_status" ;
+my $value_to_display = defined $options->{VALUE} ? "'$options->{VALUE}'" : 'undef' ;
+my $history = "$action. value = $value_to_display, ${override}${force_lock}${lock}category = '$options->{CATEGORY}' at '$options->{FILE}:$options->{LINE}', status = $set_status" ;
 
 my $history_data = {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
 $history_data->{HISTORY} = $options->{HISTORY} if exists $options->{HISTORY} ;
@@ -1526,6 +1539,203 @@ push @{$config_variable->{HISTORY}}, $history_data ;
 $self->{TIME_STAMP}++ ;
 
 return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub SetAttribute
+{
+
+=head2 SetAttribute
+
+	$config->SetAttribute(NAME => 'CC', VALUE => 'attribute') ;
+	
+	# or
+	
+	$config->Set(NAME => 'CC', VALUE => 'CC', ATTRIBUTE => 'attribute') ;
+	
+	my ($attribute, $attribute_exists) = $config->GetAttribute(NAME => 'CC') ;
+
+This allows you to attach an attribute per variable (the attribute you set is per category) other than a value.
+
+This sub will raise an exception if you try to set a variable that does not exists. Or if you try to set an attribute to a variable
+in an aliased category.
+
+=over 2
+
+=item * CATEGORY 
+
+Let you specify in which category you want to find the variable you want to set the attribute of.
+
+=back
+
+=cut
+
+my ($self, @options) = @_ ;
+
+$self->CheckOptionNames($VALID_OPTIONS, @options) ;
+
+my %options = @options ;
+
+unless(defined $options{FILE})
+	{
+	my ($package, $file_name, $line) = caller() ;
+	
+	$options{FILE} = $file_name ;
+	$options{LINE} = $line ;
+	}
+
+my $location = "$options{FILE}:$options{LINE}" ;
+
+if(exists $options{CATEGORY})
+	{
+	if($self->{WARN_FOR_EXPLICIT_CATEGORY})
+		{
+		$self->{INTERACTION}{WARN}->("$self->{NAME}: Setting '$options{NAME}' using explicit category at '$location'!\n") ;
+		}
+	}
+else
+	{
+	$options{CATEGORY} = $self->{DEFAULT_CATEGORY} ;
+	}
+
+#~ use Data::TreeDumper ;
+#~ print DumpTree {Options => \%options, Self => $self} ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless exists $options{VALUE} ;
+
+my $value_to_display = defined $options{VALUE} ? "'$options{VALUE}'" : 'undef' ;
+
+if(exists $self->{ALIASED_CATEGORIES}{$options{CATEGORY}})
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't set aliased category attribute (read only) at '$location'!")  ;
+	}
+
+# inform of action if option set
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: SetAttribute for '$options{CATEGORY}::$options{NAME}' to $value_to_display at '$location'.\n") ;
+	}
+
+if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
+	{
+	my $config_variable = $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}} ;
+	$config_variable->{ATTRIBUTE} = $options{VALUE};	
+	
+	my $history = "SET_ATTRIBUTE. category = '$options{CATEGORY}', value = $value_to_display at '$location', status = OK." ;
+	push @{$config_variable->{HISTORY}}, {TIME => $self->{TIME_STAMP}, EVENT => $history} ;
+
+	$self->{TIME_STAMP}++ ;
+	}
+else
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't set attribute, variable '$options{NAME}' doesn't exist at '$location'!")  ;
+	}
+	
+return(1) ;
+}
+
+#-------------------------------------------------------------------------------
+
+sub GetAttribute
+{
+
+=head2 GetAttribute
+
+	$config->SetAttribute(NAME => 'CC', VALUE => 'attribute') ;
+	
+	# or
+	
+	$config->Set(NAME => 'CC', VALUE => 'CC', ATTRIBUTE => 'attribute') ;
+	
+	my ($attribute, $attribute_exists) = $config->GetAttribute(NAME => 'CC') ;
+
+A warning message is displayed if you call this sub in void or scalar context.
+
+This sub returns the attribute as well as the existence of the attribute. If the attribute didn't exist, the value is
+set to B<undef>. No warnings are  displayed if you query the attribute of a variable that does not have an attribute.
+
+This sub will raise an exception if you query a variable that does not exists.
+
+=cut
+
+my ($self, @options) = @_ ;
+
+$self->CheckOptionNames($VALID_OPTIONS, @options) ;
+
+my %options = @options ;
+
+unless(defined $options{FILE})
+	{
+	my ($package, $file_name, $line) = caller() ;
+	
+	$options{FILE} = $file_name ;
+	$options{LINE} = $line ;
+	}
+
+my $location = "$options{FILE}:$options{LINE}" ;
+
+if(defined wantarray)
+	{
+	unless(wantarray)
+		{
+		$self->{INTERACTION}{WARN}->("$self->{NAME}: GetAttribute: called in scalar context at '$location'!\n") ;
+		}
+	}
+else
+	{
+	$self->{INTERACTION}{WARN}->("$self->{NAME}: 'GetAttribute' called in void context at '$location'!\n") ;
+	}
+	
+if(exists $options{CATEGORY})
+	{
+	if($self->{WARN_FOR_EXPLICIT_CATEGORY})
+		{
+		$self->{INTERACTION}{WARN}->("$self->{NAME}: Setting '$options{NAME}' using explicit category at '$location'!\n") ;
+		}
+	}
+else
+	{
+	$options{CATEGORY} = $self->{DEFAULT_CATEGORY} ;
+	}
+
+#~ use Data::TreeDumper ;
+#~ print DumpTree {Options => \%options, Self => $self} ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Unexpected field VALUE at '$location'!") if exists $options{VALUE} ;
+
+# inform of action if option set
+if($self->{VERBOSE})
+	{
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: GetAttribute for '$options{CATEGORY}::$options{NAME}' at '$location'.\n") ;
+	}
+
+my @result ;
+
+if(exists $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}})
+	{
+	my $config_variable = $self->{CATEGORIES}{$options{CATEGORY}}{$options{NAME}} ;
+	my $attribute_exist = exists $config_variable->{ATTRIBUTE};	
+	
+	if($attribute_exist)
+		{
+		@result = ($config_variable->{ATTRIBUTE}, $attribute_exist) ;
+		}
+	else
+		{
+		@result = (undef, $attribute_exist) ;
+		}
+	}
+else
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't get attribute, variable '$options{NAME}' doesn't exist at '$location'!")  ;
+	}
+
+return(@result) ;
 }
 
 #-------------------------------------------------------------------------------

@@ -1,3 +1,7 @@
+0.06
+	ADDED: Attribute per variable
+	FIXED: VALUE = undef properly handled in display
+	
 0.05
 	REMOVED: Cookbook based on POD::Tested
 	ADDED: Cookbook based on Test::Cookbook

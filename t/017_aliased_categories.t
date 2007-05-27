@@ -37,12 +37,6 @@ my ($value) = @_;
 return($value >= 0)
 } ;
 
-sub NegativeValueValidator
-{
-my ($value) = @_; 
-return($value < 0)
-} ;
-
 my $config_2 = new Config::Hierarchical
 		(
 		NAME => 'config 2',
