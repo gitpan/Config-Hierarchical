@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.06;
+$VERSION     = 0.07;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -1008,6 +1008,7 @@ sub Set
 		LOCK            => 1,
 		OVERRIDE        => 1,
 		SILENT_OVERRIDE => 1,
+		ATTRIBUTE       => 'some attribute',
 		FILE            => 'some_file',
 		LINE            => 1,
 		
@@ -1558,7 +1559,7 @@ sub SetAttribute
 
 This allows you to attach an attribute per variable (the attribute you set is per category) other than a value.
 
-This sub will raise an exception if you try to set a variable that does not exists. Or if you try to set an attribute to a variable
+This sub will raise an exception if you try to set a variable that does not exists or if you try to set an attribute to a variable
 in an aliased category.
 
 =over 2

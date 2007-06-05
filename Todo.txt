@@ -6,7 +6,13 @@
 check in SVK
 
 log4j support
-	
+
+
+optionaly, show warning if variable withing the same category is assigned a different value
+
+have a white list/regex/callback to allow only certain variables to be set
+	this will allow us to control what variables are added to the config
+
 Shall Parents allow override instead for children forcing the override
 	or shall we force an unlock and an override?
 	or shall we add a die if override

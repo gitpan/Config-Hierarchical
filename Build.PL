@@ -210,7 +210,7 @@ my $build = $class->new
 		'Data::Compare'    => 0,
 		'Sub::Install'     => 0,
 		'Data::TreeDumper' => 0,
-		'Test::Cookbook' => 0,
+		'Test::Cookbook' => 0.02,
 		
 		'Test::Block' => 0,
 		'Test::Dependencies' => 0,

@@ -7,17 +7,13 @@ use Test::Cookbook ;
 
 =head3	Creating a Config::Hierarchical configuration container
 
-=begin common
-
 	use Config::Hierarchical ;
 	
 	# give the config a name to get user friendly errors
 	
 	my $config = new Config::Hierarchical(NAME => 'Simple usage example config') ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	# Config::Hierarchical allows us to get its generated warning and errors
 	
@@ -25,14 +21,12 @@ use Test::Cookbook ;
 	$config->{INTERACTION}{WARN} = sub{$warnings = join('', @_) ; use Carp ;carp $warnings; } ;
 	$config->{INTERACTION}{DIE} = sub{$die= join('', @_) ; use Carp ;croak $die} ; 
 
-=end test
+=end hidden
 
 This will create a container with default values. You can modify the container behavior by passing options
 to the constructor. See the L<Config::Hierarchical> manual for all initialization options.
 
 =head3	Setting and getting configuration variables
-
-=begin common
 
 	$config->Set(NAME => 'CC', VALUE => 'gcc') ;
 	$config->Set(NAME => 'LD', VALUE => 'ld') ;
@@ -40,11 +34,9 @@ to the constructor. See the L<Config::Hierarchical> manual for all initializatio
 	print "Value for 'CC' is '" . $config->Get(NAME => 'CC') . "'.\n" ;
 	print "'LD' exists.\n" if $config->Exists(NAME => 'LD') ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	my $cc_value = $config->Get(NAME => 'CC') ;
 	is($cc_value, 'gcc', 'Get returns right value') ;
@@ -52,41 +44,41 @@ Would display:
 	generate_pod("\t'LD' exists.\n") if $config->Exists(NAME => 'LD') ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =head3 Set the same variable multiple time with different values
-
-=begin common
 
 	$config->Set(NAME => 'CC', VALUE => 'gcc') ;
 	$config->Set(NAME => 'CC', VALUE => 'cl') ;
 	
 	print "Value for 'CC' is '" . $config->Get(NAME => 'CC') . "'.\n\n" ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	$cc_value = $config->Get(NAME => 'CC') ;
 	is($cc_value, 'cl', 'Get returns right value') ;
 	generate_pod("\tValue for 'CC' is '$cc_value'.\n\n") ;
 
-=end test
+=end hidden
 
 B<Config::Hierarchical> does not generate any warning when you override a variable's value. If you would like to get an error,
 lock the variable.
 
 =head4 Locking variables
 
+=begin not_tested
+
 	$config->Set(NAME => 'CC', VALUE => 'gcc') ;
 	$config->Lock(NAME => 'CC') ;
 	$config->Set(NAME => 'CC', VALUE => 'cl') ;
 
+=end not_tested
+
 This would generate the following error followed by a stack trace.
 
-=begin test
+=begin hidden
 
 # the code above generates an error and dies so we can't run it directly in a common section
 
@@ -103,27 +95,23 @@ This would generate the following error followed by a stack trace.
 	$cc_value = $config->Get(NAME => 'CC') ;
 	is($cc_value, 'gcc', 'Get returns right value') ;
 
-=end test
+=end hidden
 
 =head4 Setting Locked variables
-
-=begin common
 
 	$config->Set(FORCE_LOCK => 1, NAME => 'CC', VALUE => 'cl') ;
 	print "Value for 'CC' is '" . $config->Get(NAME => 'CC') . "'.\n\n" ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	$cc_value = $config->Get(NAME => 'CC') ;
 	is($cc_value, 'cl', 'Get returns right value') ;
 	generate_pod("\t$warnings\n") ;
 	generate_pod("\tValue for 'CC' is '$cc_value'.\n\n") ;
 
-=end test
+=end hidden
 
 =head4 Getting the lock state
 
@@ -132,7 +120,7 @@ Would display:
 
 Would display:
 
-=begin test
+=begin hidden
 
 	is($config->IsLocked(NAME => 'LD'), 0, 'config not locked') ;
 	is($config->IsLocked(NAME => 'CC'), 1, 'config locked') ;
@@ -141,13 +129,11 @@ Would display:
 	generate_pod("\t'LD' is locked.\n") if $config->IsLocked(NAME => 'LD') ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =for POD::Tested reset
 
 =head2 Setting variable  in the constructor
-
-=begin common
 
 	use Config::Hierarchical ;
 	
@@ -163,9 +149,7 @@ Would display:
 					],
 				) ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	my ($warnings, $die) ;
 	$config->{INTERACTION}{WARN} = sub{$warnings = join('', @_) ; use Carp ;carp $warnings; } ;
@@ -180,29 +164,23 @@ Would display:
 	
 	is($config->Exists(NAME => 'AS'), 1, 'exist') ;
 
-=end test
+=end hidden
 
 =head2 Getting a non existing variable value
-
-=begin common
 
 	my $value = $config->Get(NAME => 'NON_EXISTING') ;
 	print "Value for 'NON_EXISTING' is defined\n" if defined $value ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	generate_pod("\t$warnings\n") ;
 	generate_pod("Value for 'NON_EXISTING' is defined\n") if defined $value ;
 
-=end test
+=end hidden
 
 =head2 Getting multiple variable values
-
-=begin common
 
 	my @variables = qw(CC LD AS) ;
 	my %values ;
@@ -214,40 +192,62 @@ Would display:
 	my $dump = DumpTree \%values, 'Variables', INDENTATION => "\t", DISPLAY_ADDRESS => 0 ; 
 	print $dump ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	is_deeply(\%values, {CC => 2, LD => 3, AS => 4}, 'GetMultiple OK') ;
 	
 	generate_pod("$dump\n") ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
+
+=head2 Variable Attribute
+
+You can attach an attribute to a configuration variable. If the same variable exists in different categories,
+each the variables have a separate attribute. Changing a variable value doesn't change the attribute.
+
+	$config->SetAttribute(NAME => 'CC', VALUE => 'attribute') ;
+	$config->Set(NAME => 'CC', VALUE => 'some_compiler') ;
+	
+	my ($attribute, $attribute_exists) = $config->GetAttribute(NAME => 'CC') ;
+
+=begin hidden
+
+	is($attribute, 'attribute') ;
+
+=end hidden
+
+You can also  set the attribute and the value at the same time. This also means you can set the attribute 
+in the B<INITIAL_VALUES> section of the configuration constructor.
+
+	$config->Set(NAME => 'CC', VALUE => 'gcc', ATTRIBUTE => 'another_attribute') ;
+
+=begin hidden
+
+	($attribute, $attribute_exists) = $config->GetAttribute(NAME => 'CC') ;
+	is($attribute, 'another_attribute') ;
+
+=end hidden
 
 =head2 history and comments
 
 B<Config::Hierarchical> will keep an history  for each variable in you config.
 
-=begin common
-
 	print $config->GetHistoryDump(NAME => 'CC') ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	generate_pod($config->GetHistoryDump(NAME => 'CC', DATA_TREEDUMPER_OPTIONS => [INDENTATION => "\t"])) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 The reference manual describes a L<Data::TreeDumper> filter that you can use to generate a history in the
 following format:
 
-=begin test
+=begin hidden
 
 	sub Compact
 	{
@@ -283,24 +283,20 @@ following format:
 	generate_pod($compact_dump) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 You can also add a comment to the history when you manipulate variables.
 
-=begin common
-
 	$config->Set(NAME => 'LD', VALUE => 'new LD value', FORCE_LOCK => 1, COMMENT => 'why we forced the lock') ;
-
-=end common
 
 Would give this history:
 
-=begin test
+=begin hidden
 
 	generate_pod($config->GetHistoryDump(NAME => 'LD', DATA_TREEDUMPER_OPTIONS => [INDENTATION => "\t"])) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 See I<GetHistory> in the manual if you want to handle the history data directly.
 
@@ -310,15 +306,13 @@ You can assign validators to variables. If a validator return B<false>, B<Config
 
 Validators can be defined in the B<Config::Hierarchical> constructor or can be local in a I<Set> call.
 
-=begin common
-
 	sub PositiveValueValidator
 	{
 	my ($value) = @_; 
 	return($value >= 0)
 	} ;
 
-=end common
+=begin not_tested
 
 	$config->Set
 		(
@@ -327,9 +321,11 @@ Validators can be defined in the B<Config::Hierarchical> constructor or can be l
 		VALIDATORS => {positive_value => \&PositiveValueValidator,},
 		) ;	
 
+=end not_tested
+
 Will generate the following error:
 
-=begin test
+=begin hidden
 
 	throws_ok
 		{
@@ -344,32 +340,30 @@ Will generate the following error:
 	$die =~ s/^/\t/gm ;
 	generate_pod($die . "\n") ;
 
-=end test
+=end hidden
 
 =head2 GetKeys
 
 You can get a list of all the variable names.
 
-=begin common
-
 	my @variable_names = $config->GetKeys() ;
 	
 	print 'The config contains the following variables: ' . join(', ', @variable_names) . ".\n" ;
 
-=end common
-
 Would display:
 
-=begin test
+=begin hidden
 
 	generate_pod("\tThe config contains the following variables: " . join(', ', @variable_names) . ".\n\n") ;
 
-=end test
+=end hidden
 
 =head2 Key and value tuples
 
 You can also get a list containing a tuple for each of the config variable. The Tuple is a hash reference. This lets you
 write code like :
+
+=begin not_tested
 
 	map
 		{
@@ -380,9 +374,13 @@ write code like :
 		
 		} $config->GetKeyValueTuples() ;
 
+=end not_tested
+
 =head2 Categories
 
 =for POD::Tested reset
+
+=begin not_tested
 
 	my $config = new Config::Hierarchical
 				(
@@ -401,7 +399,9 @@ write code like :
 					] ,
 				) ;
 
-=begin test
+=end not_tested
+
+=begin hidden
 
 # initialisation above generates warnings we need to catch
 
@@ -430,27 +430,27 @@ write code like :
 					} ,
 				) ;
 	
-=end test
+=end hidden
 
 Would generate the following warnings:
 
-=begin test
+=begin hidden
 
 	generate_pod("$warnings\n") ;
 	$warnings = '' ;
 
-=end test
+=end hidden
 
 And the config would be:
 
-=begin test
+=begin hidden
 
 	my $hash = $config->GetHashRef() ;
 	
 	generate_pod(DumpTree($hash, 'Config contains:', DISPLAY_ADDRESS => 0 , INDENTATION => "\t")) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 B<Config::Hierarchical> will display a warning anytime you set a variable and that a higher level configuration takes precedence.
 
@@ -459,84 +459,70 @@ B<Config::Hierarchical> will display a warning anytime you set a variable and th
 By default, no warning are displayed when a lower category value will be ignored. You can make B<Config::Hierarchical> check
 lower categories this way:
 
-=begin common
-
   $config->Set(CATEGORY => 'A', NAME => 'CC', VALUE => 'A_CC_2', CHECK_LOWER_LEVEL_CATEGORIES => 1) ;
-
-=end common
 
 Would generate the following warnings:
 
-=begin test
+=begin hidden
 
 	generate_pod("$warnings\n") ;
 	$warnings = '' ;
 
-=end test
+=end hidden
 
 The config is now:
 
-=begin test
+=begin hidden
 
 	$hash = $config->GetHashRef() ;
 	
 	generate_pod(DumpTree($hash, 'Config contains:', DISPLAY_ADDRESS => 0 , INDENTATION => "\t")) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =head3 Overriding a higher level category
 
 Is done this way:
 
-=begin common
-
   $config->Set(CATEGORY => 'B', NAME => 'CC', VALUE => 'B_CC_2', OVERRIDE => 1) ;
-
-=end common
 
 And would generate the following warnings:
 
-=begin test
+=begin hidden
 
 	generate_pod("$warnings\n") ;
 	$warnings = '' ;
 
-=end test
+=end hidden
 
 The config is now:
 
-=begin test
+=begin hidden
 
 	$hash = $config->GetHashRef() ;
 	
 	generate_pod(DumpTree($hash, 'Config contains:', DISPLAY_ADDRESS => 0 , INDENTATION => "\t")) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =head3 History from multiple categories
 
-=begin common
-
 	print $config->GetHistoryDump(NAME => 'CC') ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	generate_pod($config->GetHistoryDump(NAME => 'CC', DATA_TREEDUMPER_OPTIONS => [INDENTATION => "\t"])) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 
 =head2 Tie::Readonly
 
 You can tie your configuration to a read only hash. this lets you manipulate your config like a normal hash. Interpolation
 in strings is also much easier.
-
-=begin common
 
 	my %hash ;
 	tie %hash, 'Config::Hierarchical::Tie::ReadOnly' => $config ;
@@ -546,26 +532,28 @@ in strings is also much easier.
 	print "The config variables are: $keys\n" ;
 	
 	print "CC's value is '$hash{CC}'\n" ;
-	
-=end common
 
 Would display:
 
-=begin test
+=begin hidden
 
 	generate_pod("\tThe config variables are: $keys\n") ;
 	generate_pod("\tCC's value is '$hash{CC}'\n") ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 Remember that the hash is read only. Trying to modify a variable is not allowed:
 
+=begin not_tested
+
 	$hash{CC} = 2 ;
+
+=end not_tested
 
 Would generate this error:
 
-=begin test
+=begin hidden
 
 	dies_ok
 		{
@@ -575,21 +563,19 @@ Would generate this error:
 	$die =~ s/^/\t/gm ;
 	generate_pod($die . "\n") ;
 
-=end test
+=end hidden
 
 =head2 Copying data from another config
 
 Use the code below to initialized a category from data copied from another category:
 
-=begin common
-
 	my $config_2 = new Config::Hierarchical
 					(
 					NAME => 'config initialized from another config',
-					
+					#
 					CATEGORY_NAMES         => ['PARENT', 'CURRENT'],
 					DEFAULT_CATEGORY       => 'CURRENT',
-					
+					#
 					INITIAL_VALUES =>
 						[
 						# Initializing a category from another config
@@ -603,97 +589,82 @@ Use the code below to initialized a category from data copied from another categ
 								HISTORY  => $config->GetHistory(NAME => $_->{NAME}),
 								}
 							} $config->GetKeyValueTuples()),
-						
-						{NAME => 'VALUE_IN_CURRENT_CATEGORY', VALUE => 1,},
+						#
+						{NAME => 'VALUE_IN_CURRENT_CATEGORY', VALUE => 1},
 						],
 					) ;
 
-=end common
-
 And the config would be:
 
-=begin test
+=begin hidden
 
 	$hash = $config_2->GetHashRef() ;
 	
 	generate_pod(DumpTree($hash, 'Config 2 contains:', DISPLAY_ADDRESS => 0 , INDENTATION => "\t")) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 
 =head2 Aliasing other configurations
 
-=begin common
-
 	my $config_3 = new Config::Hierarchical
 					(
 					NAME => 'config with aliases',
-					
+					#
 					CATEGORY_NAMES         => ['PARENT', 'CURRENT'],
 					DEFAULT_CATEGORY       => 'CURRENT',
-					
+					#
 					INITIAL_VALUES =>
 						[
 						{
 						CATEGORY => 'PARENT',
 						ALIAS    => $config,
 						},
-						
 						# more initialization if necessary
 						],
 					) ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	my ($warnings_3, $die_3) ;
 	$config_3->{INTERACTION}{WARN} = sub{$warnings_3 = join('', @_) ; use Carp ;carp $warnings_3; } ;
 	$config_3->{INTERACTION}{DIE} = sub{$die_3 = join('', @_) ; use Carp ;croak $die_3} ; 
 
-=end test
-
-=begin common
+=end hidden
 
 	$config_3->Set(NAME => 'LD', VALUE => 'new LD') ;
 
-=end common
-
 Would generate this warning:
 
-=begin test
+=begin hidden
 
 	generate_pod("\t$warnings_3\n") ;
 
-=end test
+=end hidden
 
 And the config would be:
 
-=begin test
+=begin hidden
 
 	$hash = $config_3->GetHashRef() ;
 	
 	generate_pod(DumpTree($hash, 'Config 3 contains:', DISPLAY_ADDRESS => 0 , INDENTATION => "\t")) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =head3 History from aliased configuration
 
 B<Config::Hierarchical> will, display aliased categories history.
 
-=begin common
-
 	print $config_3->GetHistoryDump(NAME => 'LD') ;
 
-=end common
-
-=begin test
+=begin hidden
 
 	generate_pod($config_3->GetHistoryDump(NAME => 'LD', DATA_TREEDUMPER_OPTIONS => [INDENTATION => "\t"])) ;
 	generate_pod("\n") ;
 
-=end test
+=end hidden
 
 =cut

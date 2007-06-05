@@ -1,3 +1,7 @@
+0.07
+	CHANGED: test 099_Cookbook.t to match new test module format
+	ADDED: entry in cookboiok about config variable attribute
+	
 0.06
 	ADDED: Attribute per variable
 	FIXED: VALUE = undef properly handled in display
