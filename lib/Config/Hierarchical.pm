@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.07;
+$VERSION     = 0.08;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -34,6 +34,7 @@ Readonly my $VALID_OPTIONS =>
 			COMMENT
 			CATEGORY CATEGORIES_TO_EXTRACT_FROM 
 			GET_CATEGORY WARN_FOR_EXPLICIT_CATEGORY
+			SET_VALIDATOR
 			VALIDATORS
 			CHECK_LOWER_LEVEL_CATEGORIES
 			LOCK FORCE_LOCK
@@ -84,6 +85,8 @@ Readonly my $VALID_OPTIONS =>
 				DEBUG => \&sub,
 				},
 				
+			SET_VALIDATOR => \&my_set_validator,
+			
 			VALIDATORS =>
 				[
 				{
@@ -126,10 +129,7 @@ Readonly my $VALID_OPTIONS =>
   $config->Set(NAME => 'CC', VALUE => 'gcc') ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', CATEGORY => 'CLI') ;
   $config->Set(NAME => 'CC', VALUE => 'gcc', FORCE_LOCK => 1) ;
-  $config->Set(NAME => 'CC', VALUE => 'gcc', LOCK => 1) ;
-  $config->Set(NAME => 'CC', VALUE => 'gcc', SILENT_OVERRIDE => 1) ;
-  $config->Set(NAME => 'CC', VALUE => 'gcc', COMMENT => 'we prefer gcc') ;
-  $config->Set(NAME => 'CC', VALUE => 'gcc', CHECK_LOWER_LEVEL_CATEGORIES => 1) ;
+  $config->Set(NAME => 'CC', VALUE => 'gcc', SILENT_OVERRIDE => 1, COMMENT => 'we prefer gcc') ;
   
   $config->Exists(NAME => 'CC') ;
   
@@ -205,7 +205,8 @@ generally don't help much when variables are overridden. it's also difficult to 
 
 This module provides the necessary functionality to handle most of the cases needed in a modern build system.
 
-(Test t/099_cookbook.t is also a cookbook you can generate with POD::Tested)
+Test t/099_cookbook.t is also a cookbook you can generate with POD::Tested. It's a nice complement to this 
+documentation.
 
 =head1 SUBROUTINES/METHODS
 
@@ -348,7 +349,6 @@ The functions default to:
 
 =back
 
-
 =item * FILE and LINE
 
 These will be used in the information message and the history information if set. If not set, the values
@@ -391,13 +391,45 @@ Variables from aliased category can also be overridden.
 Lets you lock categories making them read only. values in B<INITIAL_VALUES> are used before locking
 the category.
 
-  my $config = new Config::Hierarchical
-			(
-			...
-			LOCKED_CATEGORIES => ['CLI', 'PBS'],
-			) ;
+  my $config = new Config::Hierarchical(..., LOCKED_CATEGORIES => ['CLI', 'PBS']) ;
 
 See L<LockCategories> and L<IsCategoryLocked>.
+
+=item * SET_VALIDATOR
+
+This gives you full control over what gets into the config. Pass a sub reference that will be used to check
+the configuration variable passed to the subroutine L<Set>.
+
+Argument passed to the subroutine reference:
+
+=over 4
+
+=item $config
+
+The configuration object. Yous should use the objects interaction subs for message display.
+
+=item $options
+
+The options passed to L<Set>.
+
+=item $location
+
+The location where L<Set> was called. Useful when displaying an error message.
+
+=back
+
+	sub my_set_validator
+	{
+	my ($config, $options, $location) = @_ ;
+	
+	# eg, check the variable name
+	if($options->{NAME} !~ /^CFG_[A-Z]+/)
+		{
+		$config->{INTERACTION}{DIE}->("$config->{NAME}: Invalid variable name '$options->{NAME}' at at '$location'!")
+		}
+	}
+	
+	my $config = new Config::Hierarchical(SET_VALIDATOR => \&my_set_validator) ;
 
 =item * VALIDATORS
 
@@ -418,8 +450,10 @@ See L<LockCategories> and L<IsCategoryLocked>.
 				],
 			) ;
 
-Let you add validation subs to B<Config::Hierarchical>. Each variable in I<NAMES> in each category in I<CATEGORY_NAMES>
-will be assigned the validators defined in I<Validators>.
+Let you add validation subs to B<Config::Hierarchical> for specific variables.
+
+Each variable in I<NAMES> in each category in I<CATEGORY_NAMES> will be assigned the validators 
+defined in I<Validators>.
 
 The example above will add a validator I<PositiveValueValidator> and validator I<SecondValidator> to
 B<CURRENT::CC>, B<CURRENT::LD>, B<OTHER::CC> and B<OTHER::LD>.
@@ -517,7 +551,15 @@ if(exists $self->{VALIDATORS})
 	$self->AddValidators($self->{VALIDATORS}, $location) ;
 	delete $self->{VALIDATORS} ;
 	}
-	
+
+if(exists $self->{SET_VALIDATOR})
+	{
+	if('CODE' ne ref $self->{SET_VALIDATOR})
+		{
+		$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid SET_VALIDATOR definition, expecting a sub reference at '$location'!") ;
+		}
+	}
+
 # temporarely remove the locked categories till we have handled INITIAL_VALUES
 my $category_locks ;
 
@@ -1040,6 +1082,12 @@ The name of the category where the variable resides. If no B<CATEGORY> is given,
 
 Set the configuration variable's attribute to the passed argument.  See <SetAttribute>.
 
+=item * SET_VALIDATOR
+
+Configuration validators that will only be used during this call to B<Set>. The I<SET_VALIDATOR> set in the constructor
+will not be called if this option is set. this lets you add configuration variable from different source and check them
+with specialized validators.
+
 =item * VALIDATORS
 
 Extra validators that will only be used during this call to B<Set>.
@@ -1129,16 +1177,9 @@ else
 #~ use Data::TreeDumper ;
 #~ print DumpTree {Options => \%options, Self => $self} ;
 
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options{CATEGORY}' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options{CATEGORY}} ;
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options{NAME} ;
-$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless exists $options{VALUE} ;
+$self->CheckSetArguments(\%options, $location) ;
 
 my $value_to_display = defined $options{VALUE} ? "'$options{VALUE}'" : 'undef' ;
-
-if(exists $self->{ALIASED_CATEGORIES}{$options{CATEGORY}})
-	{
-	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't set aliased category (read only) at '$location'!")  ;
-	}
 
 # inform of action if option set
 if($self->{VERBOSE})
@@ -1196,6 +1237,38 @@ if($warnings ne $EMPTY_STRING)
 
 $self->CheckAndSetVariable(\%options, $set_status, $location) ;
 
+return(1) ;
+}
+
+sub CheckSetArguments
+{
+
+=head2 CheckSetArguments
+
+Checks input to B<Set>. This shall not be used directly.
+
+=cut
+
+my ($self, $options, $location) = @_ ;
+
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$options->{CATEGORY}' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$options->{CATEGORY}} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing name at '$location'!") unless defined $options->{NAME} ;
+$self->{INTERACTION}{DIE}->("$self->{NAME}: Missing value at '$location'!") unless exists $options->{VALUE} ;
+
+if(exists $options->{SET_VALIDATOR})
+	{
+	$options->{SET_VALIDATOR}->($self, $options, $location) 
+	}
+elsif(exists $self->{SET_VALIDATOR})
+	{
+	$self->{SET_VALIDATOR}->($self, $options, $location) ;
+	}
+
+if(exists $self->{ALIASED_CATEGORIES}{$options->{CATEGORY}})
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Can't set aliased category (read only) at '$location'!")  ;
+	}
+	
 return(1) ;
 }
 

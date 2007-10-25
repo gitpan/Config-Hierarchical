@@ -22,7 +22,7 @@ use Test::Perl::Critic
 		'ControlStructures::ProhibitUnlessBlocks',
 		'CodeLayout::RequireTidyCode',
 		'CodeLayout::ProhibitHardTabs',
-		
+		'CodeLayout::ProhibitTrailingWhitespace' ,
 		], 
 		
 	-profile => 't/perlcriticrc' ;

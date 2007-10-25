@@ -17,6 +17,7 @@ add_stopwords
 		CheckHigherPriorityCategories
 		CheckLowerPriorityCategories
 		CheckAndSetVariable
+		CheckSetArguments
 		CheckVariableInCategory
 		CreateCustomGetFunctions
 		CheckOptionNames

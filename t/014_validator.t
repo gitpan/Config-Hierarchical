@@ -587,3 +587,46 @@ $config->Set(NAME => 'CC', VALUE => 1, OVERRIDE => 1) ;
 
 had_no_warnings() ;
 }
+
+{
+local $Plan = {'variable name validator' => 5} ;
+
+throws_ok
+	{
+	my $config = new Config::Hierarchical( SET_VALIDATOR => qr//) ;
+	} qr/Invalid SET_VALIDATOR definition, expecting a sub reference/, 'non sub ref name validator' ;
+
+sub my_set_validator
+	{
+	my ($config, $options, $location) = @_ ;
+	
+	# check the variable name
+	if($options->{NAME} !~ /^CFG_[A-Z]+/)
+		{
+		$config->{INTERACTION}{DIE}->("$config->{NAME}: Invalid variable name '$options->{NAME}' at at '$location'!")
+		}
+	}
+	
+throws_ok
+	{
+	my $config = new Config::Hierarchical(SET_VALIDATOR => \&my_set_validator) ;
+	$config->Set(NAME => 'CC', VALUE => 1) ;
+	
+	} qr/Invalid variable name 'CC' at /, 'invalid variable name' ;
+
+lives_ok
+	{
+	my $config = new Config::Hierarchical(SET_VALIDATOR => \&my_set_validator) ;
+	
+	$config->Set(NAME => 'CFG_A', VALUE => 1) ;
+	} 'valid variable name' ;
+
+lives_ok
+	{
+	my $config = new Config::Hierarchical(SET_VALIDATOR =>\&my_set_validator) ;
+	
+	$config->Set(NAME => 'CC', VALUE => 1,  SET_VALIDATOR => sub{}) ;
+	} 'set_validator override' ;
+
+had_no_warnings() ;
+}
