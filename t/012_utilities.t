@@ -221,13 +221,13 @@ my $config2 = new Config::Hierarchical
 				CATEGORY_NAMES    => ['A', 'B'],
 				DEFAULT_CATEGORY => 'A',
 				INTERACTION     => {INFO => $info},
-				INITIAL_VALUES  => [{CATEGORY => 'A', ALIAS => $config}],
+				INITIAL_VALUES  => [{CATEGORY => 'A', ALIAS_CATEGORY => $config}],
 				) ;
 
 is(@messages, 7, "SetAlias message") or diag DumpTree(\@messages) ;
 like($messages[0], $file_regex, 'verbose reports right file') ;
 like($messages[0], qr/Creating Config::Hierarchical/, 'creation message') ;
-like($messages[1], qr/SetAlias/, 'SetAlias') ;
+like($messages[1], qr/SetCategoryAlias/, 'SetCategoryAlias') ;
 
 use Data::TreeDumper ;
 }

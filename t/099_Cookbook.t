@@ -618,8 +618,8 @@ And the config would be:
 					INITIAL_VALUES =>
 						[
 						{
-						CATEGORY => 'PARENT',
-						ALIAS    => $config,
+						CATEGORY       => 'PARENT',
+						ALIAS_CATEGORY => $config,
 						},
 						# more initialization if necessary
 						],

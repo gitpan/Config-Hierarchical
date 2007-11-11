@@ -1,3 +1,10 @@
+0.09
+	FIXED: Typo in synopsis
+	CHANGED: ALIAS to ALIAS CATEGORY. not backward compatible change
+	CHANGED: handle override in CATEGORIES_TO_EXTRACT_FROM
+	ADDED: warning when categories are passed in an unexpected order
+	FIXED: CORE::print
+	
 0.08
 	ADDED: SET_VALIDATOR
 	

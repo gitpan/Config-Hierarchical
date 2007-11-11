@@ -184,7 +184,7 @@ my $config_1 = new Config::Hierarchical
 			
 			INITIAL_VALUES  =>
 				[
-				{CATEGORY => 'B', ALIAS => $config_0},
+				{CATEGORY => 'B', ALIAS_CATEGORY => $config_0},
 				
 				{NAME => 'CC1', VALUE => '1'},
 				{NAME => 'CC2', VALUE => '2'},
@@ -202,7 +202,7 @@ my $config_2 = new Config::Hierarchical
 			DEFAULT_CATEGORY => 'A',
 			INITIAL_VALUES   =>
 				[
-				{CATEGORY => 'B', ALIAS => $config_1},
+				{CATEGORY => 'B', ALIAS_CATEGORY=> $config_1},
 				] ,
 			) ;
 

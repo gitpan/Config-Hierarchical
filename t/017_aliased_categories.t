@@ -45,7 +45,7 @@ my $config_2 = new Config::Hierarchical
 		DEFAULT_CATEGORY => 'A',
 		INITIAL_VALUES   =>
 			[
-			{CATEGORY => 'A', ALIAS => $config_1},
+			{CATEGORY => 'A', ALIAS_CATEGORY => $config_1},
 			] ,
 		INTERACTION            =>
 			{
@@ -80,7 +80,7 @@ warning_like
 			DEFAULT_CATEGORY => 'A',
 			INITIAL_VALUES   =>
 				[
-				{CATEGORY => 'A', ALIAS => $config_1, COMMENT => 'comment', HISTORY => 'history'},
+				{CATEGORY => 'A', ALIAS_CATEGORY => $config_1, COMMENT => 'comment', HISTORY => 'history'},
 				{CATEGORY => 'B', NAME => 'CC1', VALUE => 'B'},
 				] ,
 			INTERACTION            =>
@@ -133,7 +133,7 @@ warning_like
 				DEFAULT_CATEGORY => 'A',
 				INITIAL_VALUES   =>
 					[
-					{CATEGORY => 'B', ALIAS => $config_1},
+					{CATEGORY => 'B', ALIAS_CATEGORY => $config_1},
 					] ,
 				INTERACTION            =>
 					{
@@ -164,7 +164,7 @@ throws_ok
 		DEFAULT_CATEGORY => 'B',
 		INITIAL_VALUES   =>
 			[
-			{CATEGORY => 'A', ALIAS => $config_1},
+			{CATEGORY => 'A', ALIAS_CATEGORY => $config_1},
 			] ,
 		INTERACTION            =>
 			{
@@ -184,7 +184,7 @@ throws_ok
 		DEFAULT_CATEGORY => 'B',
 		INITIAL_VALUES   =>
 			[
-			{CATEGORY => 'A', ALIAS => $config_1, VALUE => 1},
+			{CATEGORY => 'A', ALIAS_CATEGORY => $config_1, VALUE => 1},
 			] ,
 		INTERACTION            =>
 			{
@@ -204,7 +204,7 @@ throws_ok
 		DEFAULT_CATEGORY => 'B',
 		INITIAL_VALUES   =>
 			[
-			{CATEGORY => 'A', ALIAS => $config_1, NAME => 'name'},
+			{CATEGORY => 'A', ALIAS_CATEGORY => $config_1, NAME => 'name'},
 			] ,
 		INTERACTION            =>
 			{
@@ -225,7 +225,7 @@ throws_ok
 		INITIAL_VALUES   =>
 			[
 			{CATEGORY => 'A', NAME => 'name', VALUE => 1},
-			{CATEGORY => 'A', ALIAS => $config_1},
+			{CATEGORY => 'A', ALIAS_CATEGORY => $config_1},
 			] ,
 		INTERACTION            =>
 			{
@@ -280,8 +280,8 @@ warnings_like
 					{NAME => 'CC1', VALUE => '1'},
 					{NAME => 'CC2', VALUE => '2'},
 					{NAME => 'CC3', VALUE => '3'},
-					{CATEGORY => 'A', ALIAS => $config_a, CHECK_LOWER_LEVEL_CATEGORIES => 1},
-					{CATEGORY => 'C', ALIAS => $config_c},
+					{CATEGORY => 'A', ALIAS_CATEGORY => $config_a, CHECK_LOWER_LEVEL_CATEGORIES => 1},
+					{CATEGORY => 'C', ALIAS_CATEGORY => $config_c},
 					] ,
 					
 				INTERACTION =>
@@ -329,7 +329,7 @@ my $config_1 = new Config::Hierarchical
 			
 			INITIAL_VALUES  =>
 				[
-				{CATEGORY => 'B', ALIAS => $config_0},
+				{CATEGORY => 'B', ALIAS_CATEGORY => $config_0},
 				
 				{NAME => 'CC1', VALUE => '1'},
 				{NAME => 'CC2', VALUE => '2'},
@@ -349,7 +349,7 @@ my $config_2 = new Config::Hierarchical
 			DEFAULT_CATEGORY => 'A',
 			INITIAL_VALUES   =>
 				[
-				{CATEGORY => 'B', ALIAS => $config_1},
+				{CATEGORY => 'B', ALIAS_CATEGORY => $config_1},
 				] ,
 			FILE => 'file',
 			LINE => 'line',

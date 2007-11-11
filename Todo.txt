@@ -1,3 +1,26 @@
+#change ALIAS to CONFIGURATION_ALIAS
+
+#is order in CATEGORIES_TO_EXTRACT_FROM important
+
+
+ADD name aliasing and checking
+
+EVAL instead for VALUE
+	EvalString (was called eval config in PBS)
+	does it have to be in config::hierarchical? => make it a plugin
+	check if Text::template is OK
+	=> simply replace EVAL by VALUE in CheckSetArguments (log it too?)
+
+#have a white list/regex/callback to allow only certain variables to be set
+	this will allow us to control what variables are added to the config
+
+"takes precedence" warning can not be silenced, should itpossible?
+
+LOCK the whole config
+
+get a md5 for the config 
+
+set a mask for which variables can be accessed
 
 
 ?? Remove debugging. Filter it out?
@@ -10,9 +33,6 @@ log4j support
 
 optionaly, show warning if variable withing the same category is assigned a different value
 
-have a white list/regex/callback to allow only certain variables to be set
-	this will allow us to control what variables are added to the config
-
 Shall Parents allow override instead for children forcing the override
 	or shall we force an unlock and an override?
 	or shall we add a die if override
@@ -24,10 +44,7 @@ Die if variable is not set when GetConfig is called
 Die if variable not existst in GetConfig
 	both the above could be implemented with a test passed after Get instead for an internal implementation
 	
-EvalString (was called eval config in PBS)
-	does it have to be in config::hierarchical?
-
-Add a cache to get the data quickly, note that it should generate the same warning if any
+Add a cache to get the data quickly, IMPORTANT! it should generate the same warning and errors if any
 
 # write a bunch of examples in a cookbook (take them from tests)
 	particularly show the warning errors

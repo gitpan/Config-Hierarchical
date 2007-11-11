@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.08;
+$VERSION     = 0.09;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -43,7 +43,7 @@ Readonly my $VALID_OPTIONS =>
 			VERBOSE
 			FILE LINE 
 			
-			ALIAS
+			ALIAS_CATEGORY
 			DATA_TREEDUMPER_OPTIONS
 			)
 	} ;
@@ -109,14 +109,14 @@ Readonly my $VALID_OPTIONS =>
 			INITIAL_VALUES =>
 				[
 				{
-				CATEGORY => 'PBS',
-				ALIAS    => $pbs_config,
-				HISTORY  => ....,
-				COMMENT  => ....,
+				CATEGORY       => 'PBS',
+				ALIAS_CATEGORY => $pbs_config,
+				HISTORY        => ....,
+				COMMENT        => ....,
 				},
 				
 				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1,},
-				[CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1},
+				{CATEGORY => 'CLI', NAME => 'LD', VALUE => 2, LOCK => 1},
 				
 				{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 3, OVERRIDE => 1},
 				{CATEGORY => 'CURRENT', NAME => 'AS', VALUE => 4,},
@@ -365,10 +365,10 @@ Lets you initialize the Config::Hierarchical object. Each entry will be passed t
 			INITIAL_VALUES =>
 				[
 				{ # aliased category
-				CATEGORY => 'PBS',
-				ALIAS    => $pbs_config,
-				HISTORY  => ....,
-				COMMENT  => ....,
+				CATEGORY       => 'PBS',
+				ALIAS_CATEGORY => $pbs_config,
+				HISTORY        => ....,
+				COMMENT        => ....,
 				},
 				
 				{CATEGORY => 'CLI', NAME => 'CC', VALUE => 1},
@@ -534,7 +534,7 @@ if (@setup_data % 2)
 
 my $location = "$self->{FILE}:$self->{LINE}" ;
 
-$self->{INTERACTION}{INFO} ||= \&CORE::print ;
+$self->{INTERACTION}{INFO} ||= sub { print @_ };
 $self->{INTERACTION}{WARN} ||= \&Carp::carp ;
 $self->{INTERACTION}{DIE}  ||= \&Carp::confess ;
 
@@ -578,9 +578,9 @@ if(exists $self->{INITIAL_VALUES})
 	{
 	for my $element_data (@{$self->{INITIAL_VALUES}})
 		{
-		if(exists $element_data->{ALIAS})
+		if(exists $element_data->{ALIAS_CATEGORY})
 			{
-			$self->SetAlias(FILE => $self->{FILE}, LINE => $self->{LINE}, %{$element_data}) ;
+			$self->SetCategoryAlias(FILE => $self->{FILE}, LINE => $self->{LINE}, %{$element_data}) ;
 			}
 		else
 			{
@@ -831,10 +831,10 @@ return(1) ;
 
 #-------------------------------------------------------------------------------
 
-sub SetAlias
+sub SetCategoryAlias
 {
 	
-=head2 SetAlias
+=head2 SetCategoryAlias
 
 Used to handle category aliases. This shall not be used directly.
 
@@ -848,10 +848,10 @@ Used to handle category aliases. This shall not be used directly.
 			INITIAL_VALUES =>
 				[
 				{
-				CATEGORY => 'PBS',
-				ALIAS    => $pbs_config,
-				HISTORY  => ....,
-				COMMENT  => ....,
+				CATEGORY       => 'PBS',
+				ALIAS_CATEGORY => $pbs_config,
+				HISTORY        => ....,
+				COMMENT        => ....,
 				},
 				{NAME => 'CC1', VALUE => 'gcc'},
 				...
@@ -859,7 +859,7 @@ Used to handle category aliases. This shall not be used directly.
 				
 			) ;
 
-B<CATEGORY> and B<ALIAS> must be passed as arguments. See L<new> for details about aliased categories.
+B<CATEGORY> and B<ALIAS_CATEGORY> must be passed as arguments. See L<new> for details about aliased categories.
 
 =head3 Options
 
@@ -899,16 +899,16 @@ if(exists $self->{CATEGORIES}{$category})
 # inform of action if option set
 if($self->{VERBOSE})
 	{
-	$self->{INTERACTION}{INFO}->("$self->{NAME}: SetAlias called for category '$category' at '$location'.\n") ;
+	$self->{INTERACTION}{INFO}->("$self->{NAME}: SetCategoryAlias called for category '$category' at '$location'.\n") ;
 	}
 
 use Config::Hierarchical::Tie::ReadOnly ;
 
 my %alias_hash ;
-tie %alias_hash, 'Config::Hierarchical::Tie::ReadOnly', $options{ALIAS} ; ## no critic (ProhibitTies)
+tie %alias_hash, 'Config::Hierarchical::Tie::ReadOnly', $options{ALIAS_CATEGORY} ; ## no critic (ProhibitTies)
 
 # first check we can do this
-for($options{ALIAS}->GetKeyValueTuples())
+for($options{ALIAS_CATEGORY}->GetKeyValueTuples())
 	{
 	$self->Set
 			(
@@ -1303,12 +1303,12 @@ for my $category (@reversed_higher_priority_categories)
 			my $message = "'<${category}>::$options->{NAME}' takes precedence." ;
 			$set_status .=  $message ;
 			
-			my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+			my ($name_exists_in_category, $value_exists_in_category, $value_in_category) 
 				= $self->CheckVariableInCategory($category, $options->{NAME}) ;
 				
-			if($name_exists_in_other_category && $value_exists_in_other_category)
+			if($name_exists_in_category && $value_exists_in_category)
 				{
-				if(!Compare($value_in_other_category, $options->{VALUE}))
+				if(!Compare($value_in_category, $options->{VALUE}))
 					{
 					$warnings   .= "\t$message\n" ;
 					}
@@ -1317,13 +1317,13 @@ for my $category (@reversed_higher_priority_categories)
 				}
 			else
 				{
-				$crossed_protected_category++ ; #keep looking for a category that can take precedence
+				$crossed_protected_category++ ; # keep looking for a category that can take precedence
 				}
 			}
 		else
 			{
 			my ($override_set_status, $override_warnings)
-				 = $self->OverrideVariable($category, $options->{NAME}, $options->{VALUE}, $location, $options->{SILENT_OVERRIDE}) ;
+				 = $self->OverrideVariable($category, $options->{NAME}, $options->{VALUE}, $options->{CATEGORY}, $location, $options->{SILENT_OVERRIDE}) ;
 			
 			$set_status .=	$override_set_status ;
 			$warnings .= $override_warnings ;
@@ -1337,12 +1337,12 @@ for my $category (@reversed_higher_priority_categories)
 		
 		$set_status .=  $message ;
 		
-		my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+		my ($name_exists_in_category, $value_exists_in_category, $value_in_category) 
 			= $self->CheckVariableInCategory($category, $options->{NAME}) ;
 		
-		if($name_exists_in_other_category && $value_exists_in_other_category)
+		if($name_exists_in_category && $value_exists_in_category)
 			{
-			if(!Compare($value_in_other_category, $options->{VALUE}))
+			if(!Compare($value_in_category, $options->{VALUE}))
 				{
 				$warnings   .= "\t$message\n" ;
 				}
@@ -1376,7 +1376,10 @@ if(exists $self->{CATEGORIES}{$category} && exists $self->{CATEGORIES}{$category
 		$value_exists = 1 ;
 		$value = $self->{CATEGORIES}{$category}{$name} ;
 		
-		$overridden = $self->{ALIASED_CATEGORIES}{$category}{$name}{OVERRIDDEN} ;
+		if(exists $self->{ALIASED_CATEGORIES}{$category}{$name}{OVERRIDDEN})
+			{
+			$overridden = $self->{ALIASED_CATEGORIES}{$category}{$name}{OVERRIDDEN}
+			}
 		}
 	else
 		{
@@ -1385,11 +1388,13 @@ if(exists $self->{CATEGORIES}{$category} && exists $self->{CATEGORIES}{$category
 			$value_exists = 1 ;
 			$value = $self->{CATEGORIES}{$category}{$name}{VALUE} ;
 			
-			$overridden = exists $self->{CATEGORIES}{$category}{$name}{OVERRIDDEN} ;
+			if(exists $self->{CATEGORIES}{$category}{$name}{OVERRIDDEN})
+				{
+				$overridden = $self->{CATEGORIES}{$category}{$name}{OVERRIDDEN} ;
+				}
 			}
 		}
 	}
-
 
 return ($name_exists, $value_exists, $value, $overridden)  ;
 }
@@ -1405,18 +1410,18 @@ This shall not be used directly.
 
 =cut
 
-my ($self, $category, $variable_name, $value, $location, $silent_override) = @_ ;
+my ($self, $category, $variable_name, $value, $overriding_category, $location, $silent_override) = @_ ;
 
 my ($set_status, $warnings) = ($EMPTY_STRING, $EMPTY_STRING) ;
 
 my $override_message = "Overriding '${category}::$variable_name'" ;
 
-my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+my ($name_exists_in_category, $value_exists_in_category, $value_in_category) 
 	= $self->CheckVariableInCategory($category, $variable_name) ;
 
-if($name_exists_in_other_category && $value_exists_in_other_category)
+if($name_exists_in_category && $value_exists_in_category)
 	{
-	if(!Compare($value_in_other_category, $value))
+	if(!Compare($value_in_category, $value))
 		{
 		my $no_silent_override = (! ($silent_override || $self->{DISABLE_SILENT_OPTIONS})) ;
 		
@@ -1437,11 +1442,11 @@ else
 if(exists $self->{ALIASED_CATEGORIES}{$category})
 	{
 	# override localy, aliased config is not modified
-	$self->{ALIASED_CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} = $location;
+	push @{ $self->{ALIASED_CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} }, {CATEGORY => $overriding_category, AT => $location} ;
 	}
 else
 	{
-	$self->{CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} = $location ;
+	push @{ $self->{CATEGORIES}{$category}{$variable_name}{OVERRIDDEN} }, {CATEGORY => $overriding_category, AT => $location} ;
 	}
 
 return($set_status, $warnings) ;
@@ -1476,13 +1481,13 @@ for my $category (reverse @{$self->{CATEGORY_NAMES}})
 	
 for my $category (reverse @lower_priority_categories)
 	{
-	my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category) 
+	my ($name_exists_in_category, $value_exists_in_category, $value_in_category) 
 		= $self->CheckVariableInCategory($category, $options->{NAME}) ;
 	
 	if
 		(
-		   $name_exists_in_other_category 
-		&& !Compare($value_in_other_category, $options->{VALUE})
+		   $name_exists_in_category 
+		&& !Compare($value_in_category, $options->{VALUE})
 		)
 		{
 		my $message = exists $self->{PROTECTED_CATEGORIES}{$category} ?
@@ -1901,7 +1906,8 @@ Setting this option will disable the warning generated when the variable doesn't
 
 =item *  CATEGORIES_TO_EXTRACT_FROM
 
-If set, B<Get> will only search in the specified categories.
+If set, B<Get> will only search in the specified categories. A warning is displayed if the categories are 
+not in the same order as passed to the constructor.
 
 =item *  GET_CATEGORY
 
@@ -1968,39 +1974,78 @@ if(defined $self->{INTERACTION}{DEBUG})
 	}
 	
 my @categories_to_extract_from ;
+my %categories_to_extract_from ;
+my $user_defined_categories_to_extract_from = 0 ;
 
 if(exists $options{CATEGORIES_TO_EXTRACT_FROM})
 	{
+	$self->CheckCategoriesOrder(\%options, $location) ;
+	
 	@categories_to_extract_from = @{$options{CATEGORIES_TO_EXTRACT_FROM}} ;
+	
+	$user_defined_categories_to_extract_from++ ;
+	%categories_to_extract_from = map {$_, 1} @categories_to_extract_from ;
 	}
 else
 	{
 	@categories_to_extract_from = @{$self->{CATEGORY_NAMES}} ;
 	}
-	
-my ($value_not_found, $value, $found_in_category) = (1, undef, undef) ;
+
+
+my ($value_found, $value, $found_in_category) = (0, undef, undef) ;
 
 for my $category (@categories_to_extract_from)
 	{
-	my ($name_exists_in_other_category, $value_exists_in_other_category, $value_in_other_category, $name_in_other_category_is_overriden) 
+	my ($name_exists_in_category, $value_exists_in_category, $value_in_category, $name_in_category_is_overriden) 
 		= $self->CheckVariableInCategory($category, $options{NAME}) ;
 	
-	if($name_exists_in_other_category)
+	if($name_exists_in_category)
 		{
 		# remember the value in case the overriding category is not in the list of categories to 
 		# extract from
-		$value_not_found   = 0 ;
-		$value             =  $value_in_other_category ;
+		$value_found++ ;
+		$value             = $value_in_category ;
 		$found_in_category = $category ;
 		
 		# check if lower priority category did an override
-		if($name_in_other_category_is_overriden)
+		if($name_in_category_is_overriden)
 			{
-			# get value from overriding category
+			if(! $user_defined_categories_to_extract_from)
+				{
+				# get value from overriding category
+				}
+			else
+				{
+				# if this category was overridden by a category passed by the user
+				# in CATEGORIES_TO_EXTRACT_FROM, use the overridden variable
+				# otherwise, we are done
+				
+				my $current_categories_contain_overriding_category = 0 ;
+				
+				for my $override (@{ $name_in_category_is_overriden})
+					{
+					if(exists $categories_to_extract_from{$override->{CATEGORY}})
+						{
+						$current_categories_contain_overriding_category++ ;
+						last ;
+						}
+					}
+					
+				if(! $current_categories_contain_overriding_category)
+					{
+					# we're done, return value from this category
+					
+					if($self->{VERBOSE})
+						{
+						$self->{INTERACTION}{INFO}->("\tfound in category '$found_in_category'.\n") ;
+						}
+					last ;
+					}
+				}
 			}
 		else
 			{
-			# return value from this category
+			# we're done, return value from this category
 			
 			if($self->{VERBOSE})
 				{
@@ -2011,7 +2056,7 @@ for my $category (@categories_to_extract_from)
 		}
 	}
 	
-if($value_not_found)
+if(! $value_found)
 	{
 	if(! ($options{SILENT_NOT_EXISTS} ||  $self->{DISABLE_SILENT_OPTIONS}))
 		{
@@ -2026,6 +2071,39 @@ if($options{GET_CATEGORY})
 else
 	{
 	return($value) ;
+	}
+}
+
+#-------------------------------------------------------------------------------
+
+sub CheckCategoriesOrder
+{
+	
+=head2 CheckCategoriesOrder
+
+This shall not be used directly.
+
+=cut
+
+my ($self, $options, $location) = @_ ;
+
+my @default_categories = @{ $self->{CATEGORY_NAMES} } ;
+
+for my $category ( @{ $options->{CATEGORIES_TO_EXTRACT_FROM} })
+	{
+	$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category '$category' at at '$location'!") unless exists $self->{VALID_CATEGORIES}{$category} ;
+
+	shift @default_categories while(@default_categories && ($category ne $default_categories[0])) ;
+	
+	if(@default_categories)
+		{
+		shift @default_categories ;
+		}
+	else
+		{
+		$self->{INTERACTION}{WARN}->("$self->{NAME}: categories in 'CATEGORIES_TO_EXTRACT_FROM' in an unexpected order at '$location'.\n") ;
+		last ;
+		}
 	}
 }
 
@@ -2897,10 +2975,10 @@ history of the aliased config.
 					INITIAL_VALUES =>
 						[
 						{
-						CATEGORY => 'PBS',
-						ALIAS    => $pbs_config,
-						HISTORY  => ....,
-						COMMENT  => ....,
+						CATEGORY       => 'PBS',
+						ALIAS_CATEGORY => $config1,
+						HISTORY        => ....,
+						COMMENT        => ....,
 						},
 					...
 					) ;

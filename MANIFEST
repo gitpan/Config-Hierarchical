@@ -31,6 +31,8 @@ t/014_validator.t
 t/015_lock_categories.t
 t/016_keys.t
 t/017_aliased_categories.t
+t/018_set_get_attribute.t
+t/019_category_order.t
 t/051_tie_readonly.t
 t/061_delta.t
 t/099_Cookbook.t

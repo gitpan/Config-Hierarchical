@@ -226,7 +226,7 @@ had_no_warnings("no warning for variable that don't exist in lower categories") 
 }
 
 {
-local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 5} ;
+local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 3} ;
 
 warning_like
 	{
@@ -250,12 +250,6 @@ warning_like
 		}
 		qr/Getting 'CC' using explicit category/, 'explict category' ;
 	
-	warning_like
-		{
-		my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B', 'A'],) ;
-		is($value, 'B', 'Get from specific categories') ;
-		}
-		qr/Getting 'CC' using explicit categories/, 'explict categories' ;
 	} 
 	[
 	qr/Setting 'CC' using explicit category/, # in setup
@@ -265,7 +259,7 @@ warning_like
 }
 
 {
-local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 2} ;
+local $Plan = {'Get from specific category + WARN_FOR_EXPLICIT_CATEGORY' => 3} ;
 
 warning_like
 	{
@@ -284,15 +278,19 @@ warning_like
 	$config->SetDisplayExplicitCategoryWarningOption(1) ;
 	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'],) ;
 	is($value, 'B', 'Get from specific category') ;
+	
+	$value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['A', 'B'],) ;
+	is($value, 'A', 'Get from firstcategory') ;
 	} 
 	[
 	qr/Setting 'B::CC'/, # precedence warning
 	qr/Getting 'CC' using explicit category/,
+	qr/Getting 'CC' using explicit categories/,
 	], 'warnings OK'
 }
 
 {
-local $Plan = {'SetDisplayExplicitCategoryWarningOption verbose' => 1} ;
+local $Plan = {'SetDisplayExplicitCategoryWarningOption verbose' => 2} ;
 
 warning_like
 	{
@@ -307,11 +305,13 @@ warning_like
 	
 	$config->SetDisplayExplicitCategoryWarningOption(1) ;
 	
-	my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'], ) ;
+	throws_ok
+		{
+		my $value = $config->Get(NAME => 'CC', CATEGORIES_TO_EXTRACT_FROM => ['B'], ) ;
+		} qr/Invalid category 'B'/, 'category not listed in constructor';
 	} 
 	[
 	qr/Getting 'CC' using explicit category/,
-	qr/Variable 'CC' doesn't exist in categories/,
 	], 'warnings OK'
 }
 
