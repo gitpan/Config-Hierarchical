@@ -1,16 +1,36 @@
+
+#optionaly, keep variable access log. can be used for Xref.
+	#log get
+	log gethashref ??
+	#access function to the log
+	#document
+	examples in cookbook
+
+EVAL instead for VALUE
+	#EvalString (was called eval config in PBS)
+	#does it have to be in config::hierarchical? => make it a plugin
+	#check if Text::template is OK
+	implement as : replace EVAL by VALUE in CheckSetArguments (log it too?)
+	document
+	implement remaining tests (listed in 020.t)
+
+Single Eval::Context perl Config::Set vs single Eval::Context for all the Set in a SetMultiple/Construction
+
 #change ALIAS to CONFIGURATION_ALIAS
 
 #is order in CATEGORIES_TO_EXTRACT_FROM important
 
+Check if a history is implemented right when a variable exists in multiple categories
+	what history is returned?
+	
+ADD name aliasing
+	categories?
 
-ADD name aliasing and checking
+#Add Name checking => SET_SUB
 
-EVAL instead for VALUE
-	EvalString (was called eval config in PBS)
-	does it have to be in config::hierarchical? => make it a plugin
-	check if Text::template is OK
-	=> simply replace EVAL by VALUE in CheckSetArguments (log it too?)
-
+#Invalid value for variable 'F'. Local validator
+	should show the values
+	
 #have a white list/regex/callback to allow only certain variables to be set
 	this will allow us to control what variables are added to the config
 
@@ -21,6 +41,8 @@ LOCK the whole config
 get a md5 for the config 
 
 set a mask for which variables can be accessed
+	set mask
+	get mast
 
 
 ?? Remove debugging. Filter it out?

@@ -335,7 +335,7 @@ Will generate the following error:
 			VALUE => -1, 
 			VALIDATORS => {positive_value => \&PositiveValueValidator,},
 			) ;	
-		} qr/Invalid value for variable 'CC'. Local validator 'positive_value' defined at .*/, "local validator" ;
+		} qr/Invalid value '-1' for variable 'CC'. Local validator 'positive_value' defined at .*/, "local validator" ;
 		
 	$die =~ s/^/\t/gm ;
 	generate_pod($die . "\n") ;

@@ -46,7 +46,7 @@ throws_ok
 		VALUE => -1, 
 		VALIDATORS => {positive_value => \&PositiveValueValidator,},
 		) ;	
-	} qr/Invalid value for variable 'CC'. Local validator 'positive_value' defined at .*/, "local validator" ;
+	} qr/Invalid value '-1' for variable 'CC'. Local validator 'positive_value' defined at .*/, "local validator" ;
 }
 
 {
@@ -109,13 +109,13 @@ warnings_like
 				{
 				CATEGORY_NAMES => ['CURRENT'] ,
 				NAMES          => ['CC', 'LD'],
-				VALIDATORS     => {validator_name => \&PositiveValueValidator},
+				VALIDATORS     => {the_validator => \&PositiveValueValidator},
 				},
 				
 				{
 				CATEGORY_NAMES => ['CURRENT',] ,
 				NAMES          => ['CC', 'LD'],
-				VALIDATORS     => {validator_name => \&NegativeValueValidator, },
+				VALIDATORS     => {the_validator => \&NegativeValueValidator, },
 				},
 				],
 			) ;
@@ -123,14 +123,14 @@ warnings_like
 	throws_ok
 		{
 		$config->Set(NAME => 'CC', VALUE => 1,) ;	
-		} qr/Invalid value for variable 'CC'. Validator 'validator_name' defined at .*/, 'using overridden validator' ;
+		} qr/Invalid value '1' for variable 'CC'. Validator 'the_validator' defined at .*/, 'using overridden validator' ;
 		
 	#~ diag $config->GetDump() ;
 	
 	} 
 	[
-	qr/Overriding variable 'CC' validator 'validator_name'/,
-	qr/Overriding variable 'LD' validator 'validator_name'/,
+	qr/Overriding variable 'CC' validator 'the_validator'/,
+	qr/Overriding variable 'LD' validator 'the_validator'/,
 	], 'validator override' ;
 }
 
@@ -410,7 +410,7 @@ $config->Set(CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 0 ,) ;
 throws_ok
 	{
 	$config->Set(NAME => 'LD', VALUE => -1 ,) ;
-	} qr/Invalid value for variable 'LD'. Validator 'positive_value' defined at/, "" ;
+	} qr/Invalid value '-1' for variable 'LD'. Validator 'positive_value' defined at/, "" ;
 }
 
 {
@@ -442,12 +442,12 @@ $config->Set(CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 0 ,) ;
 throws_ok
 	{
 	$config->Set(CATEGORY => 'CLI', NAME => 'LD', VALUE => -1 ,) ;
-	} qr/Invalid value for variable 'LD'. Validator 'positive_value' defined at/, 'CLI validator' ;
+	} qr/Invalid value '-1' for variable 'LD'. Validator 'positive_value' defined at/, 'CLI validator' ;
 	
 throws_ok
 	{
 	$config->Set(CATEGORY => 'CURRENT', NAME => 'LD', VALUE => -1 ,) ;
-	} qr/Invalid value for variable 'LD'. Validator 'positive_value' defined at/, 'CURRENT validator' ;
+	} qr/Invalid value '-1' for variable 'LD'. Validator 'positive_value' defined at/, 'CURRENT validator' ;
 }
 
 {
@@ -485,7 +485,7 @@ throws_ok
 			NAMES          => ['CC', 'LD'],
 			VALIDATORS     => {positive_value => \&PositiveValueValidator},
 			) ;
-	} qr/Invalid value for variable 'CC'. Validator 'positive_value' defined at/, 'AddValidator CLI' ;
+	} qr/Invalid value '-1' for variable 'CC'. Validator 'positive_value' defined at/, 'AddValidator CLI' ;
 
 #~ diag $config->GetDump() ;
 
@@ -499,7 +499,7 @@ warning_like
 				NAMES          => ['CC', 'LD'],
 				VALIDATORS     => {positive_value => \&PositiveValueValidator},
 				) ;
-		} qr/Invalid value for variable 'CC'. Validator 'positive_value' defined at/, 'AddValidator CLI CURRENT';
+		} qr/Invalid value '-1' for variable 'CC'. Validator 'positive_value' defined at/, 'AddValidator CLI CURRENT';
 	} qr/Overriding variable 'CC' validator 'positive_value/, 'overriding validator';
 }
 
@@ -594,7 +594,7 @@ local $Plan = {'variable name validator' => 5} ;
 throws_ok
 	{
 	my $config = new Config::Hierarchical( SET_VALIDATOR => qr//) ;
-	} qr/Invalid SET_VALIDATOR definition, expecting a sub reference/, 'non sub ref name validator' ;
+	} qr/Invalid 'SET_VALIDATOR' definition, expecting a sub reference/, 'non sub ref name validator' ;
 
 sub my_set_validator
 	{

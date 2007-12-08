@@ -17,12 +17,13 @@ add_stopwords
 		CheckHigherPriorityCategories
 		CheckLowerPriorityCategories
 		CheckAndSetVariable
+		CheckCategoriesOrder
 		CheckSetArguments
 		CheckVariableInCategory
 		CreateCustomGetFunctions
 		CheckOptionNames
+		GetAccessLog
 		GetAttribute
-		CheckCategoriesOrder
 		GetDump
 		GetHashRef
 		GetHistory
@@ -41,6 +42,7 @@ add_stopwords
 		SetAttribute
 		SetDisableSilentOptions
 		SetDisplayExplicitCategoryWarningOption
+		SetInteractionDefault
 		SetMultiple
 		SetupCategories
 		UnlockCategories

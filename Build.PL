@@ -211,6 +211,7 @@ my $build = $class->new
 		'Sub::Install'     => 0,
 		'Data::TreeDumper' => 0,
 		'Test::Cookbook' => 0.02,
+		'Eval::Context' => 0.03,
 		
 		'Test::Block' => 0,
 		'Test::Dependencies' => 0,

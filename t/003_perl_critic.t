@@ -9,9 +9,9 @@ use Term::ANSIColor qw(:constants) ;
 
 use Test::Perl::Critic 
 	-severity => 1,
-	#~ -format =>  "[%s] %m  at '%f:%l:%c' rule %p %e\n"
-				#~ . "\t%r",
-	-format =>  "[%s] %m at " . BOLD . BLUE . "%F:%l" . RESET . ". %e\n",
+	-format =>  "[%s] %m  at " .  BOLD . BLUE . "'%f:%l:%c'" . RESET . " rule " .  BOLD . RED . "%p %e\n" . RESET
+				. "\t%r",
+	#~ -format =>  "[%s] %m at " . BOLD . BLUE . "%F:%l" . RESET . ". %e\n",
 	-exclude =>
 		[
 		'Miscellanea::RequireRcsKeywords',
@@ -23,6 +23,8 @@ use Test::Perl::Critic
 		'CodeLayout::RequireTidyCode',
 		'CodeLayout::ProhibitHardTabs',
 		'CodeLayout::ProhibitTrailingWhitespace' ,
+		'Documentation::PodSpelling', # done by pod spelling test
+		'ValuesAndExpressions::ProhibitCommaSeparatedStatements', # too many false positives. See RT #27654
 		], 
 		
 	-profile => 't/perlcriticrc' ;

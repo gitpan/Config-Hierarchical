@@ -1,6 +1,14 @@
+0.10
+	CHANGED: Validator error message displays the invalid value
+	ADDED: EVAL
+	ADDED: LOG_ACCESS
+	ADDED: check the constructor named arguments
+	CHANGED: pod to remove 'arguments' and 'return' from the index
+	CHANGED: major rework of the subroutines header in the POD 
+	
 0.09
 	FIXED: Typo in synopsis
-	CHANGED: ALIAS to ALIAS CATEGORY. not backward compatible change
+	CHANGED: ALIAS to ALIAS CATEGORY. not backward a compatible change
 	CHANGED: handle override in CATEGORIES_TO_EXTRACT_FROM
 	ADDED: warning when categories are passed in an unexpected order
 	FIXED: CORE::print

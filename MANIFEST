@@ -33,6 +33,8 @@ t/016_keys.t
 t/017_aliased_categories.t
 t/018_set_get_attribute.t
 t/019_category_order.t
+t/020_eval.t
+t/021_log_access.t
 t/051_tie_readonly.t
 t/061_delta.t
 t/099_Cookbook.t
