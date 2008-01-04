@@ -23,7 +23,6 @@ use Test::Perl::Critic
 		'CodeLayout::RequireTidyCode',
 		'CodeLayout::ProhibitHardTabs',
 		'CodeLayout::ProhibitTrailingWhitespace' ,
-		'Documentation::PodSpelling', # done by pod spelling test
 		'ValuesAndExpressions::ProhibitCommaSeparatedStatements', # too many false positives. See RT #27654
 		], 
 		

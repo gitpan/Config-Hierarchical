@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.10;
+$VERSION     = 0.11;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }

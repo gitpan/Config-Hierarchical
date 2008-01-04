@@ -1,6 +1,6 @@
 ---
 name: Config-Hierarchical
-version: 0.1
+version: 0.11
 author:
   - 'Khemir Nadim ibn Hamouda. <nadim@khemir.net>'
 abstract: configuration variable hierachical container
@@ -28,7 +28,7 @@ requires:
 provides:
   Config::Hierarchical:
     file: lib/Config/Hierarchical.pm
-    version: 0.1
+    version: 0.11
   Config::Hierarchical::Delta:
     file: lib/Config/Hierarchical/Delta.pm
     version: 0.01

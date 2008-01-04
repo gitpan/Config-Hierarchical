@@ -12,7 +12,10 @@ use Test::Block qw($Plan);
 use Config::Hierarchical ; 
 
 {
-local $Plan = {'initial values' => 14} ;
+local $Plan = {'initial values' => 16} ;
+
+my $structure = { NAME => 'hi', VALUE => 'there'} ;
+my $object = bless { NAME => 'hi', VALUE => 'there'}, 'a test object' ;
 
 my $config = new Config::Hierarchical
 				(
@@ -22,6 +25,9 @@ my $config = new Config::Hierarchical
 					{CATEGORY => 'CURRENT', NAME => 'CC', VALUE => 2},
 					{CATEGORY => 'CURRENT', NAME => 'LD', VALUE => 3, LOCK => 1},
 					{NAME => 'AS', VALUE => 4, LOCK => 1},
+					
+					{NAME => 'STRUCTURE', VALUE => $structure},
+					{NAME => 'OBJECT', VALUE => $object},
 					] ,
 				) ;
 				
@@ -60,6 +66,9 @@ dies_ok
 	{
 	$config->Exists() ;
 	} 'un-named variable' ;
+	
+is_deeply($config->Get(NAME => 'STRUCTURE'), $structure, 'structured variable') or diag  $config->GetDump();
+is(ref($config->Get(NAME => 'OBJECT')), 'a test object', 'object variable') or diag  $config->GetDump();
 }
 
 {
