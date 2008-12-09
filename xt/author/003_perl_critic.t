@@ -26,38 +26,7 @@ use Test::Perl::Critic
 		'ValuesAndExpressions::ProhibitCommaSeparatedStatements', # too many false positives. See RT #27654
 		], 
 		
-	-profile => 't/perlcriticrc' ;
+	-profile => 'xt/author/perlcriticrc' ;
 
-my $alarm_reached = 0 ;
-eval
-	{
-	local $SIG{ALRM} = sub {$alarm_reached++ ; die} ;
-	alarm 1 ;
-	
-	eval
-		{
-		my $input = <STDIN> ;
-		} ;
-	
-	alarm 0 ;
-	} ;
-
-alarm 0 ;
-
-if($alarm_reached)
-	{
-	eval <<EOE ;
-		{
-		use Test::More qw(no_plan) ;
-		SKIP:
-			{
-			skip("perl critics (press key to run)", 1) if($alarm_reached) ;
-			}
-		}
-EOE
-	}
-else
-	{
-	all_critic_ok() ;
-	}
+all_critic_ok() ;
 	

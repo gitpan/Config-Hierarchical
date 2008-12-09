@@ -555,6 +555,61 @@ $cc = $config->Get(CATEGORY => 'CLI', NAME => 'CC') ;
 had_no_warnings("getting existing variable, warning disabled") ; 
 }
 
+{
+local $Plan = {'DIE_NOT_EXISTS' => 3} ;
+
+my $config = new Config::Hierarchical
+			(
+			DIE_NOT_EXISTS => 1,
+			DISABLE_SILENT_OPTIONS => 0,
+			CATEGORY_NAMES  => ['CLI', 'CURRENT'],
+			DEFAULT_CATEGORY => 'CURRENT',
+			INITIAL_VALUES  =>
+				[
+				{CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 1},
+				] ,
+			) ;
+
+throws_ok
+	{
+	my $variable = $config->Get(CATEGORY => 'CLI', NAME => 'NOT_EXISTS') ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+
+
+throws_ok
+	{
+	my $variable = $config->Get(CATEGORY => 'CLI', NAME => 'NOT_EXISTS', SILENT_NOT_EXISTS => 1) ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+	
+
+throws_ok
+	{
+	$config->SetDisableSilentOptions(1) ;
+	my $variable = $config->Get(CATEGORY => 'CLI', NAME => 'NOT_EXISTS', SILENT_NOT_EXISTS => 1) ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+}
+
+{
+local $Plan = {'DIE_NOT_EXISTS' => 1} ;
+
+my $config = new Config::Hierarchical
+			(
+			DISABLE_SILENT_OPTIONS => 0,
+			CATEGORY_NAMES  => ['CLI', 'CURRENT'],
+			DEFAULT_CATEGORY => 'CURRENT',
+			INITIAL_VALUES  =>
+				[
+				{CATEGORY => 'CLI', NAME => 'CLI', VALUE => 1},
+				{CATEGORY => 'CURRENT', NAME => 'CURRENT', VALUE => 1},
+				] ,
+			) ;
+
+throws_ok
+	{
+	my $variable = $config->Get(DIE_NOT_EXISTS => 1, CATEGORY => 'CLI', NAME => 'NOT_EXISTS') ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+}
 
 {
 local $Plan = {'SILENT_OVERRIDE' => 3} ;

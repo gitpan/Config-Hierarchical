@@ -11,7 +11,7 @@ use Exporter ();
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.11;
+$VERSION     = '0.12' ;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }
@@ -43,6 +43,7 @@ Readonly my $VALID_OPTIONS =>
 			LOCK FORCE_LOCK
 			OVERRIDE
 			SILENT_NOT_EXISTS SILENT_OVERRIDE
+			DIE_NOT_EXISTS
 			VERBOSE
 			FILE LINE 
 			ALIAS_CATEGORY
@@ -278,6 +279,13 @@ The name of the category used when C<Set> is called without a I<CATEGORY> argume
 
 If the B<CATEGORY_NAMES> list contains more than one entry, B<DEFAULT_CATEGORY> must be set or
 an error will be generated.
+
+=item * DIE_NOT_EXISTS
+
+  my $config = new Config::Hierarchical(..., DIE_NOT_EXISTS => 0) ;
+
+Calling L<Get> on an unexisting variable will generate an exception when this option is set. The option
+is not set by default.
 
 =item * DISABLE_SILENT_OPTIONS
 
@@ -681,16 +689,16 @@ Helper sub called by new.
 my ($self, $location) = @_ ;
 
 # find the protected categories and removes the brackets from the name
-$self->{PROTECTED_CATEGORIES} = { map{ if(/^<(.*)>$/xm) {$1 => 1} else {} } @{ $self->{CATEGORY_NAMES} } } ;  ## no critic (BuiltinFunctions::ProhibitComplexMappings)
+$self->{PROTECTED_CATEGORIES} = { map{ if(/^<(.*)>$/sxm) {$1 => 1} else {} } @{ $self->{CATEGORY_NAMES} } } ;  ## no critic (BuiltinFunctions::ProhibitComplexMappings)
 
 my @seen_categories ;
 for my $name (@{$self->{CATEGORY_NAMES}})
 	{
-	if($name =~ /^<(.*)>$/xm)
+	if($name =~ /^<(.*)>$/sxm)
 		{
 		my $name_without_brackets = $1 ;
 		
-		if($name_without_brackets =~ /<|>/xm)
+		if($name_without_brackets =~ /<|>/sxm)
 			{
 			$self->{INTERACTION}{DIE}->("$self->{NAME}: Invalid category name '$name_without_brackets' at '$location'!") ;
 			}
@@ -772,6 +780,8 @@ return(1) ;
 
 #-------------------------------------------------------------------------------
 
+Readonly my $EXPECTED_NUMBER_OF_ARGUMENTS_FOR_ADD_VALIDATOR => 3 ;
+
 sub AddValidators
 {
 	
@@ -786,7 +796,7 @@ for my $validator_definition (@{$validators})
 	if
 		(
 		'HASH' ne ref $validator_definition
-		|| 3 != keys %{$validator_definition}
+		||  $EXPECTED_NUMBER_OF_ARGUMENTS_FOR_ADD_VALIDATOR != keys %{$validator_definition}
 		
 		|| ! exists $validator_definition->{CATEGORY_NAMES}
 		|| 'ARRAY' ne ref $validator_definition->{CATEGORY_NAMES}
@@ -2016,8 +2026,6 @@ sub Validate
 
 my ($self,$options, $set_status, $location, $config_variable_exists)  = @_ ;
 
-my @validators ;
-
 if($config_variable_exists)
 	{
 	my $config_variable = $self->{CATEGORIES}{$options->{CATEGORY}}{$options->{NAME}} ;
@@ -2271,9 +2279,20 @@ if($self->{LOG_ACCESS})
 
 if(! $value_found)
 	{
-	if(! ($options{SILENT_NOT_EXISTS} ||  $self->{DISABLE_SILENT_OPTIONS}))
+	#~ use Data::TreeDumper ;
+	#~ warn DumpTree \%options ;
+	#~ warn DumpTree $self ;
+	
+	if($self->{DIE_NOT_EXISTS} || $options{DIE_NOT_EXISTS})
 		{
-		$self->{INTERACTION}{WARN}->("$self->{NAME}: Variable '$options{NAME}' doesn't exist in categories [@categories_to_extract_from]at '$location'. Returning undef!\n") ;
+		$self->{INTERACTION}{DIE}->("$self->{NAME}: Variable '$options{NAME}' doesn't exist in categories [@categories_to_extract_from]at '$location'.\n") ;
+		}
+	else
+		{
+		if(! ($options{SILENT_NOT_EXISTS} ||  $self->{DISABLE_SILENT_OPTIONS}))
+			{
+			$self->{INTERACTION}{WARN}->("$self->{NAME}: Variable '$options{NAME}' doesn't exist in categories [@categories_to_extract_from]at '$location'. Returning undef!\n") ;
+			}
 		}
 	}
 

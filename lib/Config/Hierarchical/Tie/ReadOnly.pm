@@ -10,7 +10,7 @@ BEGIN
 
 use vars qw ($VERSION @ISA @EXPORT_OK %EXPORT_TAGS);
 
-$VERSION     = 0.01;
+$VERSION     = '0.01' ;
 @EXPORT_OK   = qw ();
 %EXPORT_TAGS = ();
 }

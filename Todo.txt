@@ -1,5 +1,8 @@
 
+User can add a default variable generator for unexisting variables
+
 implement remaining tests (listed in 020.t)
+	- test locking and inherited variables locking
 
 Single Eval::Context perl Config::Set vs single Eval::Context for all the Set in a SetMultiple/Construction
 
@@ -14,14 +17,14 @@ LOCK the whole config
 get a md5 for the config 
 
 set a mask for which variables can be accessed
-	set mask
-	get mast
+	set mask	get mast => die if accesses
+	inheriting object can set what it inherits
+	object giving can list what is inheritable
 
+remove variables => make them non acceessible with set/get but keep them
 
 ?? Remove debugging. Filter it out?
 	use Debug::Mixin instead
-
-check in SVK
 
 log4j support
 
@@ -40,6 +43,10 @@ Die if variable not existst in GetConfig
 	both the above could be implemented with a test passed after Get instead for an internal implementation
 	
 Add a cache to get the data quickly, IMPORTANT! it should generate the same warning and errors if any
+
+#---------------------------------------------------------------------------------------
+
+#check in git
 
 # Add tests where the variable's value is a structure
 

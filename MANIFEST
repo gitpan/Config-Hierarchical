@@ -1,4 +1,5 @@
 Changes
+Changes.manual.txt
 Build.PL
 Makefile.PL
 MANIFEST
@@ -12,11 +13,7 @@ lib/Config/Hierarchical/Tie/ReadOnly.pm
 lib/Config/Hierarchical/Delta.pm
 
 t/000_distribution.t
-t/000_kwalitee.t
 t/001_load.t
-t/002_1_pod.t
-t/002_2_pod_coverage.t
-t/003_perl_critic.t
 t/004_wantarray.t
 t/005_set_get_default.t
 t/006_set_get_categories.t
@@ -38,4 +35,8 @@ t/051_tie_readonly.t
 t/061_delta.t
 t/099_Cookbook.t
 
-t/perlcriticrc
+xt/author/000_kwalitee.t
+xt/author/002_1_pod.t
+xt/author/002_2_pod_coverage.t
+xt/author/003_perl_critic.t
+xt/author/perlcriticrc

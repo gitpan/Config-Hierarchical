@@ -361,6 +361,40 @@ $cc = $config->Get(NAME => 'CC') ;
 had_no_warnings("getting non existing variable, warning disabled") ; 
 }
 
+{
+local $Plan = {'DIE_NOT_EXISTS' => 3} ;
+
+my $config = new Config::Hierarchical(DIE_NOT_EXISTS => 1) ;
+
+throws_ok
+	{
+	my $variable = $config->Get(NAME => 'NOT_EXISTS') ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+
+
+throws_ok
+	{
+	my $variable = $config->Get(NAME => 'NOT_EXISTS', SILENT_NOT_EXISTS => 1) ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+	
+
+throws_ok
+	{
+	$config->SetDisableSilentOptions(1) ;
+	my $variable = $config->Get(NAME => 'NOT_EXISTS', SILENT_NOT_EXISTS => 1) ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+}
+
+{
+local $Plan = {'DIE_NOT_EXISTS' => 1} ;
+
+my $config = new Config::Hierarchical() ;
+
+throws_ok
+	{
+	my $variable = $config->Get(DIE_NOT_EXISTS => 1, NAME => 'NOT_EXISTS') ;
+	} qr/'NOT_EXISTS' doesn't exist/, "getting non existing variable under DIE_NOT_EXISTS mode" ;
+}
 
 {
 local $Plan = {'coverage test' => 1} ;
