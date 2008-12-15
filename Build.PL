@@ -134,7 +134,9 @@ if($ENV{'Config_Hierarchical_USE_GIT_VERSION_FOR_DIST'})
 	my $source = "Config-Hierarchical-$version.tar.gz" ;
 	my $destination = "Config-Hierarchical-latest.tar.gz" ;
 	
-	use Net::SCP qw(scp iscp);
+	eval {use Net::SCP qw(scp iscp);};
+	die $@ if $@ ;
+	
 	my $scp = Net::SCP->new();
 
 	$scp->iscp($source, "nadim\@firewall:/var/www/localhost/htdocs/files_for_download/$destination") or die $scp->{errstr} ;

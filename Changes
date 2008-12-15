@@ -1,3 +1,10 @@
+commit c7fcfc87e0744a9705118cef571407b8a5baa907
+Author: nadim khemir <nadim@naquadim.(none)>
+Date:   Mon Dec 15 22:13:01 2008 +0100
+
+    FIXED: load Net::SCP on author computer only
+    FIXED: made all files unix line ended
+
 commit 5609a1008bc9f58188db8c7f359e57577da3d131
 Author: nadim khemir <nadim@naquadim.(none)>
 Date:   Tue Dec 9 02:22:47 2008 +0100

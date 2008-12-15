@@ -1,6 +1,6 @@
 ---
 name: Config-Hierarchical
-version: 0.12.6
+version: 0.12.8
 author:
   - 'Khemir Nadim ibn Hamouda. <nadim@khemir.net>'
 abstract: configuration variable hierachical container
