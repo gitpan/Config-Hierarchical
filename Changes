@@ -1,3 +1,10 @@
+commit e42810a6225dfdc527309490c0c32583ffab1099
+Author: nadim khemir <nadim@naquadim.(none)>
+Date:   Wed Dec 17 23:21:13 2008 +0100
+
+    CHANGED: removed unnecessary test dependency
+    CHANGED: removed target latest from Build.PL
+
 commit c7fcfc87e0744a9705118cef571407b8a5baa907
 Author: nadim khemir <nadim@naquadim.(none)>
 Date:   Mon Dec 15 22:13:01 2008 +0100

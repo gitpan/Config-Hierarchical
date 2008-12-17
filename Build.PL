@@ -119,30 +119,6 @@ EOV
 $self->SUPER::ACTION_build(@_);
 }
 
-sub ACTION_latest
-{
-my $self = shift;
-
-$self->ACTION_dist(@_) ;
-
-if($ENV{'Config_Hierarchical_USE_GIT_VERSION_FOR_DIST'})
-	{
-	`git status -a`;
-
-	my ($version) = GetVersionandRevisionFrom('lib/Config/Hierarchical.pm') ;
-	
-	my $source = "Config-Hierarchical-$version.tar.gz" ;
-	my $destination = "Config-Hierarchical-latest.tar.gz" ;
-	
-	eval {use Net::SCP qw(scp iscp);};
-	die $@ if $@ ;
-	
-	my $scp = Net::SCP->new();
-
-	$scp->iscp($source, "nadim\@firewall:/var/www/localhost/htdocs/files_for_download/$destination") or die $scp->{errstr} ;
-	}
-}
-
 sub ACTION_dist
 {
 my $self = shift;
@@ -205,7 +181,6 @@ my $build = $class->new
 		'Eval::Context' => 0.03,
 		
 		'Test::Block' => 0,
-		'Test::Dependencies' => 0,
 		'Test::Distribution' => 0,
 		'Test::Exception' => 0,
 		'Test::NoWarnings' => 0,
